@@ -26,7 +26,7 @@ export default function Header() {
       <div className="mx-auto container px-6 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="text-4xl font-semibold text-foreground">
+          <Link href="/" className="text-2xl sm:text-3xl md:text-4xl font-semibold text-foreground">
             andunu
           </Link>
 
@@ -55,7 +55,7 @@ export default function Header() {
           {/* CTA Button */}
           <Link 
             href="#commencer"
-            className="rounded-2xl bg-[var(--primary)] px-6 py-2.5 text-sm font-medium text-white hover:opacity-90 transition-opacity"
+            className="rounded-2xl bg-[var(--primary)] px-4 py-2 sm:px-6 sm:py-2.5 text-xs sm:text-sm font-medium text-white hover:opacity-90 transition-opacity"
           >
             Commencer
           </Link>

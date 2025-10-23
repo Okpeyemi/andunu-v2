@@ -3,40 +3,40 @@ import Image from 'next/image';
 
 export default function HeroSection() {
   return (
-    <section className="w-full bg-white py-20 md:py-32">
-      <div className="mx-auto container px-6">
+    <section className="w-full bg-white py-12 sm:py-16 md:py-20 lg:py-32">
+      <div className="mx-auto container px-4 sm:px-6">
         <div className="flex flex-col items-center text-center max-w-7xl mx-auto">
           {/* Main Heading */}
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-foreground leading-tight mb-6">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-foreground leading-tight mb-4 sm:mb-6">
             Planifiez votre repas, recevez-le à l'heure exacte.
           </h1>
 
           {/* Subheading */}
-          <p className="text-lg md:text-xl text-foreground/80 mb-8 max-w-3xl">
+          <p className="text-base sm:text-lg md:text-xl text-foreground/80 mb-6 sm:mb-8 max-w-3xl px-4">
             Dites adieu aux files d'attente sous le soleil et aux "désolé, c'est épuisé". 
             Commandez à 8h pour 12h, payez en ligne, et profitez de votre déjeuner livré directement.
           </p>
 
           {/* Email Input & CTA Button */}
-          <div className="flex flex-col sm:flex-row gap-4 items-center w-full max-w-xl mb-16">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-center w-full max-w-xl mb-12 sm:mb-16 px-4">
             <input 
               type="email"
-              placeholder="Saisissez votre adresse e-mail professionnelle"
-              className="flex-1 w-full rounded-2xl border border-gray-300 px-6 py-4 text-base text-foreground placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              placeholder="Votre adresse e-mail"
+              className="flex-1 w-full rounded-2xl border border-gray-300 px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-base text-foreground placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             />
             <Link 
               href="#commencer"
-              className="rounded-2xl bg-[var(--primary)] px-8 py-4 text-base font-medium text-white hover:opacity-90 transition-opacity whitespace-nowrap"
+              className="rounded-2xl bg-[var(--primary)] px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-medium text-white hover:opacity-90 transition-opacity whitespace-nowrap text-center"
             >
               Commencer
             </Link>
           </div>
 
           {/* Mockup Images Section */}
-          <div className="relative w-full max-w-6xl mx-auto mt-8 h-[500px]">
+          <div className="relative w-full max-w-6xl mx-auto mt-6 sm:mt-8 h-[300px] sm:h-[400px] md:h-[500px] hidden sm:block">
             <div className="relative w-full h-full flex items-center justify-center">
               {/* Left Image - People (Behind) */}
-              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[30%] h-[350px] rounded-2xl overflow-hidden bg-gray-100 shadow-lg z-10">
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[30%] h-[250px] sm:h-[300px] md:h-[350px] rounded-xl md:rounded-2xl overflow-hidden bg-gray-100 shadow-lg z-10">
                 <Image
                   src="/hero-left.jpg"
                   alt="Équipe utilisant andunu"
@@ -46,7 +46,7 @@ export default function HeroSection() {
               </div>
 
               {/* Center Image - Dashboard/Interface (Front) */}
-              <div className="relative w-[45%] h-[450px] rounded-2xl overflow-hidden bg-gray-100 shadow-2xl z-20">
+              <div className="relative w-[45%] h-[320px] sm:h-[380px] md:h-[450px] rounded-xl md:rounded-2xl overflow-hidden bg-gray-100 shadow-2xl z-20">
                 <Image
                   src="/hero-center.jpg"
                   alt="Interface andunu"
@@ -56,7 +56,7 @@ export default function HeroSection() {
               </div>
 
               {/* Right Image - People (Behind) */}
-              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[30%] h-[350px] rounded-2xl overflow-hidden bg-gray-100 shadow-lg z-10">
+              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[30%] h-[250px] sm:h-[300px] md:h-[350px] rounded-xl md:rounded-2xl overflow-hidden bg-gray-100 shadow-lg z-10">
                 <Image
                   src="/hero-right.jpg"
                   alt="Clients satisfaits"
