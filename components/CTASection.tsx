@@ -7,14 +7,14 @@ export default function CTASection() {
       <div className="mx-auto container px-4 sm:px-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 sm:gap-12 items-center mx-auto">
           {/* Left Content */}
-          <div className="flex flex-col">
+          <div className="flex flex-col max-w-xl">
             {/* Subhead */}
             <p className="text-sm font-semibold text-white/90 uppercase tracking-wider mb-4">
               TA BOUFFE À TA PORTÉE
             </p>
 
             {/* Title */}
-            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-4 sm:mb-6">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold !text-white leading-tight mb-4 sm:mb-6">
               Prêt à gagner du temps ?
             </h2>
 
@@ -24,7 +24,7 @@ export default function CTASection() {
             </p>
 
             {/* Email Input & CTA Button */}
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-start w-full max-w-xl">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-start w-full">
               <input 
                 type="email"
                 placeholder="Votre adresse e-mail"
@@ -40,13 +40,14 @@ export default function CTASection() {
           </div>
 
           {/* Right Image */}
-          <div className="relative h-[300px] sm:h-[400px] md:h-[500px] rounded-xl sm:rounded-2xl overflow-hidden bg-white/10">
+          <div className="relative h-[300px] sm:h-[400px] md:h-[500px] rounded-xl sm:rounded-2xl overflow-hidden bg-white/10 shadow-lg">
             <Image
-              src="/cta-image.jpg"
+              src="/gagner-du-temps.png"
               alt="Prêt à gagner du temps"
               fill
               className="object-cover"
             />
+            <div className="absolute inset-0 bg-[var(--primary)]/10 pointer-events-none" />
           </div>
         </div>
       </div>

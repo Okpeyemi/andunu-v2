@@ -1,5 +1,57 @@
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
+import { useState, useEffect, useRef } from 'react';
+
+function VideoWithFallback({ 
+  videoSrc, 
+  imageSrc, 
+  alt 
+}: { 
+  videoSrc: string; 
+  imageSrc: string; 
+  alt: string;
+}) {
+  const [isVideoReady, setIsVideoReady] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleCanPlay = () => {
+      setIsVideoReady(true);
+    };
+
+    video.addEventListener('canplay', handleCanPlay);
+    return () => video.removeEventListener('canplay', handleCanPlay);
+  }, []);
+
+  return (
+    <>
+      {!isVideoReady && (
+        <Image
+          src={imageSrc}
+          alt={alt}
+          fill
+          className="object-cover"
+        />
+      )}
+      <video
+        ref={videoRef}
+        src={videoSrc}
+        autoPlay
+        loop
+        muted
+        playsInline
+        className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
+          isVideoReady ? 'opacity-100' : 'opacity-0'
+        }`}
+      />
+    </>
+  );
+}
 
 export default function HeroSection() {
   return (
@@ -33,36 +85,37 @@ export default function HeroSection() {
           </div>
 
           {/* Mockup Images Section */}
-          <div className="relative w-full max-w-6xl mx-auto mt-6 sm:mt-8 h-[300px] sm:h-[400px] md:h-[500px] hidden sm:block">
+          <div className="relative w-full max-w-6xl mx-auto mt-6 sm:mt-8 h-[500px] sm:h-[600px] md:h-[700px] hidden sm:block drop-shadow-lg">
             <div className="relative w-full h-full flex items-center justify-center">
               {/* Left Image - People (Behind) */}
-              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[30%] h-[250px] sm:h-[300px] md:h-[350px] rounded-xl md:rounded-2xl overflow-hidden bg-gray-100 shadow-lg z-10">
-                <Image
-                  src="/hero-left.jpg"
-                  alt="Équipe utilisant andunu"
-                  fill
-                  className="object-cover"
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[30%] h-[380px] sm:h-[450px] md:h-[520px] rounded-xl md:rounded-2xl overflow-hidden bg-gray-100 shadow-xl z-10">
+                <VideoWithFallback
+                  videoSrc="/attente.mp4"
+                  imageSrc="/attente.png"
+                  alt="Personne en attente"
                 />
+                <div className="absolute inset-0 bg-[var(--primary)]/10 pointer-events-none" />
               </div>
 
               {/* Center Image - Dashboard/Interface (Front) */}
-              <div className="relative w-[45%] h-[320px] sm:h-[380px] md:h-[450px] rounded-xl md:rounded-2xl overflow-hidden bg-gray-100 shadow-2xl z-20">
+              <div className="relative w-[45%] h-[480px] sm:h-[560px] md:h-[650px] rounded-xl md:rounded-2xl overflow-hidden bg-gray-100 shadow-2xl z-20">
                 <Image
-                  src="/hero-center.jpg"
+                  src="/andunu.png"
                   alt="Interface andunu"
                   fill
                   className="object-cover"
                 />
+                <div className="absolute inset-0 bg-[var(--primary)]/10 pointer-events-none" />
               </div>
 
               {/* Right Image - People (Behind) */}
-              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[30%] h-[250px] sm:h-[300px] md:h-[350px] rounded-xl md:rounded-2xl overflow-hidden bg-gray-100 shadow-lg z-10">
-                <Image
-                  src="/hero-right.jpg"
-                  alt="Clients satisfaits"
-                  fill
-                  className="object-cover"
+              <div className="absolute right-0 top-1/2 -translate-y-1/2 w-[30%] h-[380px] sm:h-[450px] md:h-[520px] rounded-xl md:rounded-2xl overflow-hidden bg-gray-100 shadow-xl z-10">
+                <VideoWithFallback
+                  videoSrc="/termine.mp4"
+                  imageSrc="/termine.png"
+                  alt="Repas terminée"
                 />
+                <div className="absolute inset-0 bg-[var(--primary)]/10 pointer-events-none" />
               </div>
             </div>
           </div>

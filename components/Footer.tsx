@@ -8,7 +8,7 @@ export default function Footer() {
         <div className="flex flex-col lg:flex-row justify-between items-start md:items-center gap-6 sm:gap-8 mb-12 sm:mb-14 md:mb-16 pb-8 sm:pb-10 md:pb-12 border-b border-white/10">
           {/* Left Text */}
           <div className="flex flex-col gap-6 sm:gap-8">
-            <h3 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold text-white">
+            <h3 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold !text-white">
               Comment pouvons-nous vous aider ?
             </h3>
             <Link 
@@ -86,7 +86,7 @@ export default function Footer() {
 
         {/* Bottom Section - Large Logo */}
         <div className="flex justify-center items-center overflow-hidden">
-          <h2 className="text-[50px] sm:text-[80px] md:text-[140px] lg:text-[200px] xl:text-[280px] font-bold text-white leading-none">
+          <h2 className="text-[50px] sm:text-[80px] md:text-[140px] lg:text-[200px] xl:text-[280px] font-bold !text-white leading-none">
             andunu
           </h2>
         </div>

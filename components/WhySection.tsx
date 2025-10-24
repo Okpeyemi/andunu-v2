@@ -8,13 +8,14 @@ export default function WhySection() {
           {/* First Row - Image Left, Text Right */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-10 md:gap-12 items-center">
             {/* Left Image */}
-            <div className="relative h-[300px] sm:h-[400px] md:h-[500px] rounded-xl sm:rounded-2xl overflow-hidden bg-gray-100">
+            <div className="relative h-[300px] sm:h-[400px] md:h-[500px] rounded-xl sm:rounded-2xl overflow-hidden bg-gray-100 shadow-lg">
               <Image
-                src="/why-section-1.jpg"
-                alt="Pourquoi andunu"
+                src="/file-attente.png"
+                alt="File d'attente"
                 fill
                 className="object-cover"
               />
+              <div className="absolute inset-0 bg-[var(--primary)]/10 pointer-events-none" />
             </div>
 
             {/* Right Content */}
@@ -35,26 +36,28 @@ export default function WhySection() {
             </div>
 
             {/* Right Image */}
-            <div className="relative h-[300px] sm:h-[400px] md:h-[500px] rounded-xl sm:rounded-2xl overflow-hidden bg-gray-100 order-1 lg:order-2">
+            <div className="relative h-[300px] sm:h-[400px] md:h-[500px] rounded-xl sm:rounded-2xl overflow-hidden bg-gray-100 order-1 lg:order-2 shadow-lg">
               <Image
-                src="/why-section-2.jpg"
-                alt="Pourquoi andunu"
+                src="/termine.png"
+                alt="Repas terminé"
                 fill
                 className="object-cover"
               />
+              <div className="absolute inset-0 bg-[var(--primary)]/10 pointer-events-none" />
             </div>
           </div>
 
           {/* Third Row - Image Left, Text Right */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-10 md:gap-12 items-center">
             {/* Left Image */}
-            <div className="relative h-[300px] sm:h-[400px] md:h-[500px] rounded-xl sm:rounded-2xl overflow-hidden bg-gray-100">
+            <div className="relative h-[300px] sm:h-[400px] md:h-[500px] rounded-xl sm:rounded-2xl overflow-hidden bg-gray-100 shadow-lg">
               <Image
-                src="/why-section-3.jpg"
-                alt="Pourquoi andunu"
+                src="/perte-de-temps.png"
+                alt="Perte de temps"
                 fill
                 className="object-cover"
               />
+              <div className="absolute inset-0 bg-[var(--primary)]/10 pointer-events-none" />
             </div>
 
             {/* Right Content */}
