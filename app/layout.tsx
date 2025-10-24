@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Poppins, DM_Sans } from "next/font/google";
 import "./globals.css";
+import NavigationLoader from "@/components/NavigationLoader";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -81,7 +82,7 @@ export const metadata: Metadata = {
     },
   },
   verification: {
-    google: 'votre-code-google-search-console',
+    google: 'google-site-verification=4SB5m7uqMbidgnActrOcmvZibrLMlyyDND6XqbrBFSc',
     // yandex: 'votre-code-yandex',
     // bing: 'votre-code-bing',
   },
@@ -97,6 +98,7 @@ export default function RootLayout({
       <body
         className={`${poppins.variable} ${dmSans.variable} antialiased`}
       >
+        <NavigationLoader />
         {children}
       </body>
     </html>
