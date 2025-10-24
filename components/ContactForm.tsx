@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { FadeIn, StaggerContainer, StaggerItem } from './animations';
 
 export default function ContactForm() {
   const [formData, setFormData] = useState({
@@ -32,18 +33,24 @@ export default function ContactForm() {
         <div className="mx-auto container px-4 sm:px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
           {/* Left Column - Form */}
           <div>
-            <p className="text-sm font-semibold text-foreground/60 uppercase tracking-wider mb-4">
-              CONTACTEZ-NOUS
-            </p>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight mb-8 sm:mb-12">
-              Contactez l'équipe<br />commerciale
-            </h1>
-            <p className="text-base sm:text-lg text-foreground/80 max-w-2xl mb-12 sm:mb-16">
-              Nous vous aiderons à trouver les solutions et la formule idéales pour votre entreprise. 
-              Remplissez le formulaire ci-dessous : notre équipe vous répondra dans les plus brefs délais.
-            </p>
+            <FadeIn direction="up" delay={0.1}>
+              <p className="text-sm font-semibold text-foreground/60 uppercase tracking-wider mb-4">
+                CONTACTEZ-NOUS
+              </p>
+            </FadeIn>
+            <FadeIn direction="up" delay={0.2}>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight mb-8 sm:mb-12">
+                Contactez l'équipe<br />commerciale
+              </h1>
+            </FadeIn>
+            <FadeIn direction="up" delay={0.3}>
+              <p className="text-base sm:text-lg text-foreground/80 max-w-2xl mb-12 sm:mb-16">
+                Nous vous aiderons à trouver les solutions et la formule idéales pour votre entreprise. 
+                Remplissez le formulaire ci-dessous : notre équipe vous répondra dans les plus brefs délais.
+              </p>
+            </FadeIn>
 
-            <div>
+            <StaggerContainer staggerDelay={0.1}>
               <form onSubmit={handleSubmit} className="flex flex-col gap-6">
                 {/* Prénom et Nom */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -156,11 +163,12 @@ export default function ContactForm() {
                   Envoyer
                 </button>
               </form>
-            </div>
+            </StaggerContainer>
           </div>
 
           {/* Right Column - Help Sections */}
-          <div className="flex flex-col gap-8">
+          <FadeIn direction="right" delay={0.2}>
+            <div className="flex flex-col gap-8">
             {/* Assistance produit */}
             <div className="border-b border-gray-200 pb-8">
               <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-4">
@@ -205,6 +213,7 @@ export default function ContactForm() {
               </p>
             </div>
           </div>
+          </FadeIn>
         </div>
       </section>
     </main>

@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { ScaleIn } from './animations';
 
 function TypewriterText() {
   const [firstText, setFirstText] = useState('');
@@ -76,24 +77,26 @@ export default function SolutionSection() {
     <section className="w-full bg-white py-12 sm:py-16 md:py-20 lg:py-32">
       <div className="mx-auto container px-4 sm:px-6">
         <TypewriterText />
-        <div className="bg-[var(--primary)] rounded-2xl sm:rounded-3xl px-6 sm:px-8 md:px-16 py-8 sm:py-10 md:py-12 lg:py-16">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6 sm:gap-8 max-w-7xl mx-auto">
-            {/* Left Content */}
-            <div className="flex flex-col gap-3 text-center md:text-left">
-              <h4 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold !text-white">
-                Avec Andunu, c'est simple et fiable.
-              </h4>
-            </div>
+        <ScaleIn delay={0.3}>
+          <div className="bg-[var(--primary)] rounded-2xl sm:rounded-3xl px-6 sm:px-8 md:px-16 py-8 sm:py-10 md:py-12 lg:py-16">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6 sm:gap-8 max-w-7xl mx-auto">
+              {/* Left Content */}
+              <div className="flex flex-col gap-3 text-center md:text-left">
+                <h4 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold !text-white">
+                  Avec Andunu, c'est simple et fiable.
+                </h4>
+              </div>
 
-            {/* Right Button */}
-            <Link 
-              href="#commencer"
-              className="rounded-2xl bg-white px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-medium text-primary hover:opacity-90 transition-opacity whitespace-nowrap cursor-pointer"
-            >
-              Commencer
-            </Link>
+              {/* Right Button */}
+              <Link 
+                href="#commencer"
+                className="rounded-2xl bg-white px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-medium text-primary hover:opacity-90 transition-opacity whitespace-nowrap cursor-pointer"
+              >
+                Commencer
+              </Link>
+            </div>
           </div>
-        </div>
+        </ScaleIn>
       </div>
     </section>
   );

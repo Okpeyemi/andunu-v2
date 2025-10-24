@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import Loader from './Loader';
 
-export default function NavigationLoader() {
+function NavigationLoaderContent() {
   const [isLoading, setIsLoading] = useState(false);
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -24,4 +24,12 @@ export default function NavigationLoader() {
   if (!isLoading) return null;
 
   return <Loader />;
+}
+
+export default function NavigationLoader() {
+  return (
+    <Suspense fallback={null}>
+      <NavigationLoaderContent />
+    </Suspense>
+  );
 }

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
+import { FadeIn, StaggerContainer, StaggerItem, ScaleIn } from './animations';
 
 function VideoWithFallback({ 
   videoSrc, 
@@ -59,18 +60,23 @@ export default function HeroSection() {
       <div className="mx-auto container px-4 sm:px-6">
         <div className="flex flex-col items-center text-center max-w-7xl mx-auto">
           {/* Main Heading */}
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-foreground leading-tight mb-4 sm:mb-6">
-            Planifiez votre repas, recevez-le à l'heure exacte.
-          </h1>
+          <FadeIn delay={0.1} direction="up">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-foreground leading-tight mb-4 sm:mb-6">
+              Planifiez votre repas, recevez-le à l'heure exacte.
+            </h1>
+          </FadeIn>
 
           {/* Subheading */}
-          <p className="text-base sm:text-lg md:text-xl text-foreground/80 mb-6 sm:mb-8 max-w-3xl px-4">
-            Dites adieu aux files d'attente sous le soleil et aux "désolé, c'est épuisé". 
-            Commandez à 8h pour 12h, payez en ligne, et profitez de votre déjeuner livré directement.
-          </p>
+          <FadeIn delay={0.2} direction="up">
+            <p className="text-base sm:text-lg md:text-xl text-foreground/80 mb-6 sm:mb-8 max-w-3xl px-4">
+              Dites adieu aux files d'attente sous le soleil et aux "désolé, c'est épuisé". 
+              Commandez à 8h pour 12h, payez en ligne, et profitez de votre déjeuner livré directement.
+            </p>
+          </FadeIn>
 
           {/* Email Input & CTA Button */}
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-center w-full max-w-xl mb-12 sm:mb-16 px-4">
+          <FadeIn delay={0.3} direction="up">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-center w-full max-w-xl mb-12 sm:mb-16 px-4">
             <input 
               type="email"
               placeholder="Votre adresse e-mail"
@@ -83,6 +89,7 @@ export default function HeroSection() {
               Commencer
             </Link>
           </div>
+          </FadeIn>
 
           {/* Mockup Images Section */}
           <div className="relative w-full max-w-6xl mx-auto mt-6 sm:mt-8 h-[500px] sm:h-[600px] md:h-[700px] hidden sm:block drop-shadow-lg">
