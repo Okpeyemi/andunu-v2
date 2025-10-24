@@ -36,8 +36,8 @@ export default function WhySection() {
           {/* Second Row - Text Left, Image Right */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-10 md:gap-12 items-center">
             {/* Left Content */}
-            <FadeIn direction="left" delay={0.1}>
-              <div className="flex flex-col justify-center order-2 lg:order-1">
+            <FadeIn direction="left" delay={0.1} className="order-2 lg:order-1">
+              <div className="flex flex-col justify-center">
                 <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-foreground leading-tight">
                   Vaut-il le coup d'entendre "C'est terminé" après avoir patientié ?
                 </h2>
@@ -45,8 +45,8 @@ export default function WhySection() {
             </FadeIn>
 
             {/* Right Image */}
-            <FadeIn direction="right" delay={0.2}>
-              <div className="relative h-[300px] sm:h-[400px] md:h-[500px] rounded-xl sm:rounded-2xl overflow-hidden bg-gray-100 order-1 lg:order-2 shadow-lg">
+            <FadeIn direction="right" delay={0.2} className="order-1 lg:order-2">
+              <div className="relative h-[300px] sm:h-[400px] md:h-[500px] rounded-xl sm:rounded-2xl overflow-hidden bg-gray-100 shadow-lg">
                 <Image
                   src="/termine.png"
                   alt="Repas terminé"
