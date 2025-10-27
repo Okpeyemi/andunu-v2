@@ -1,23 +1,9 @@
 'use client';
 
 import Image from 'next/image';
-import Link from 'next/link';
-import { useState } from 'react';
 import { FadeIn, ScaleIn } from './animations';
-import WhatsAppModal from './WhatsAppModal';
-import PhoneInputWhite from './PhoneInputWhite';
 
 export default function CTASection() {
-  const [phone, setPhone] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (phone.trim()) {
-      setIsModalOpen(true);
-    }
-  };
-
   return (
     <section id="cta" className="w-full bg-[var(--primary)] py-12 sm:py-16 md:py-20 lg:py-32">
       <div className="mx-auto container px-4 sm:px-6">
@@ -40,21 +26,15 @@ export default function CTASection() {
                 Inscrivez-vous gratuitement et planifiez votre premier repas.
               </p>
 
-              {/* Phone Input & CTA Button */}
-              <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-start w-full">
-                <PhoneInputWhite
-                  value={phone}
-                  onChange={setPhone}
-                  placeholder="Indicatif + numéro (ex: 22997000000)"
-                  className="flex-1 w-full rounded-2xl border-2 border-white/20 bg-white/10 px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-base text-white placeholder:text-white/60 focus:outline-none focus:ring-2 focus:ring-white focus:border-transparent"
-                />
-                <button 
-                  type="submit"
-                  className="rounded-2xl bg-white px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-medium text-primary hover:opacity-90 transition-opacity whitespace-nowrap text-center self-start"
+              {/* CTA Button */}
+              <div className="flex w-full">
+                <a 
+                  href="/planifier"
+                  className="rounded-2xl bg-white px-6 sm:px-8 py-3 sm:py-4 text-base sm:text-lg font-semibold text-primary hover:opacity-90 transition-opacity whitespace-nowrap text-center"
                 >
                   Commencer
-                </button>
-              </form>
+                </a>
+              </div>
             </div>
           </FadeIn>
 
@@ -72,7 +52,6 @@ export default function CTASection() {
           </ScaleIn>
         </div>
       </div>
-      <WhatsAppModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </section>
   );
 }
