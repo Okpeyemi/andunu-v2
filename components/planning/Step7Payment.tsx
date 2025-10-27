@@ -45,6 +45,18 @@ export default function Step7Payment({
       const [firstName, ...lastNameParts] = userInfo.fullName.split(' ');
       const lastName = lastNameParts.join(' ') || firstName;
 
+      // Sauvegarder les données de commande dans localStorage pour le reçu
+      const orderData = {
+        selectedDays,
+        meals,
+        location,
+        deliveryTime,
+        userInfo,
+        paymentOption: selectedOption,
+        amount: totalAmount,
+      };
+      localStorage.setItem('orderData', JSON.stringify(orderData));
+
       // Créer la transaction FedaPay
       const response = await fetch('/api/payment/create-transaction', {
         method: 'POST',
