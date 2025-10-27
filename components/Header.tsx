@@ -3,11 +3,19 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
+import PhoneModal from './PhoneModal';
+import WhatsAppModal from './WhatsAppModal';
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isPhoneModalOpen, setIsPhoneModalOpen] = useState(false);
+  const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
   const pathname = usePathname();
+
+  const handlePhoneSubmit = (phone: string) => {
+    setIsWhatsAppModalOpen(true);
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -76,12 +84,12 @@ export default function Header() {
           </button>
 
           {/* CTA Button - Desktop */}
-          <Link 
-            href="/contact"
+          <button 
+            onClick={() => setIsPhoneModalOpen(true)}
             className="hidden md:block rounded-2xl bg-[var(--primary)] px-4 py-2 sm:px-6 sm:py-2.5 text-xs sm:text-sm font-medium text-white hover:opacity-90 transition-opacity"
           >
             Commencer
-          </Link>
+          </button>
         </div>
 
         {/* Mobile Menu */}
@@ -103,15 +111,24 @@ export default function Header() {
             >
               Contact
             </Link>
-            <Link 
-              href="/contact"
-              className="rounded-2xl bg-[var(--primary)] px-6 py-3 text-sm font-medium text-white hover:opacity-90 transition-opacity text-center mt-2"
+            <button 
+              onClick={() => setIsPhoneModalOpen(true)}
+              className="rounded-2xl bg-[var(--primary)] px-6 py-3 text-sm font-medium text-white hover:opacity-90 transition-opacity text-center mt-2 w-full"
             >
               Commencer
-            </Link>
+            </button>
           </nav>
         )}
       </div>
+      <PhoneModal 
+        isOpen={isPhoneModalOpen} 
+        onClose={() => setIsPhoneModalOpen(false)}
+        onSubmit={handlePhoneSubmit}
+      />
+      <WhatsAppModal 
+        isOpen={isWhatsAppModalOpen} 
+        onClose={() => setIsWhatsAppModalOpen(false)}
+      />
     </header>
   );
 }

@@ -28,12 +28,12 @@ export default function UniqueSection() {
     {
       number: '1',
       title: 'Choisissez et planifiez',
-      description: 'À 8h, sélectionnez votre repas pour 12h via notre app ou site.',
+      description: 'À 8h, sélectionnez votre repas pour 12h via notre chat WhatsApp.',
     },
     {
       number: '2',
-      title: 'Payez en sécurité',
-      description: 'Confirmez avec votre carte ou wallet, sans frais cachés.',
+      title: 'Payez votre commande',
+      description: 'Confirmez avec votre commande, sans frais cachés.',
     },
     {
       number: '3',

@@ -4,6 +4,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect, useRef } from 'react';
 import { FadeIn, StaggerContainer, StaggerItem, ScaleIn } from './animations';
+import WhatsAppModal from './WhatsAppModal';
+import PhoneInput from './PhoneInput';
 
 function VideoWithFallback({ 
   videoSrc, 
@@ -55,6 +57,16 @@ function VideoWithFallback({
 }
 
 export default function HeroSection() {
+  const [phone, setPhone] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (phone.trim()) {
+      setIsModalOpen(true);
+    }
+  };
+
   return (
     <section className="w-full bg-white py-12 sm:py-16 md:py-20 lg:py-32">
       <div className="mx-auto container px-4 sm:px-6">
@@ -74,21 +86,22 @@ export default function HeroSection() {
             </p>
           </FadeIn>
 
-          {/* Email Input & CTA Button */}
+          {/* Phone Input & CTA Button */}
           <FadeIn delay={0.3} direction="up">
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-center w-full max-w-xl mb-12 sm:mb-16 px-4">
-            <input 
-              type="email"
-              placeholder="Votre adresse e-mail"
-              className="flex-1 w-full rounded-2xl border border-gray-300 px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-base text-foreground placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-            />
-            <Link 
-              href="#commencer"
-              className="rounded-2xl bg-[var(--primary)] px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-medium text-white hover:opacity-90 transition-opacity whitespace-nowrap text-center"
-            >
-              Commencer
-            </Link>
-          </div>
+            <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-stretch sm:items-start w-full max-w-xl mb-12 sm:mb-16 px-4">
+              <PhoneInput
+                value={phone}
+                onChange={setPhone}
+                placeholder="Indicatif + numéro (ex: 22997000000)"
+                className="flex-1 w-full rounded-2xl border border-gray-300 px-4 sm:px-6 py-3 sm:py-4 text-sm sm:text-base text-foreground placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+              <button 
+                type="submit"
+                className="rounded-2xl bg-[var(--primary)] px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-medium text-white hover:opacity-90 transition-opacity whitespace-nowrap text-center self-start"
+              >
+                Commencer
+              </button>
+            </form>
           </FadeIn>
 
           {/* Mockup Images Section */}
@@ -128,6 +141,7 @@ export default function HeroSection() {
           </div>
         </div>
       </div>
+      <WhatsAppModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </section>
   );
 }

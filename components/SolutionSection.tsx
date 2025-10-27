@@ -89,7 +89,7 @@ export default function SolutionSection() {
 
               {/* Right Button */}
               <Link 
-                href="#commencer"
+                href="#cta"
                 className="rounded-2xl bg-white px-6 sm:px-8 py-3 sm:py-4 text-sm sm:text-base font-medium text-primary hover:opacity-90 transition-opacity whitespace-nowrap cursor-pointer"
               >
                 Commencer
