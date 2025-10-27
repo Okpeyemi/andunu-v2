@@ -12,7 +12,7 @@ export default function OTPPage() {
   const [error, setError] = useState('');
   const [countdown, setCountdown] = useState(60);
   const [canResend, setCanResend] = useState(false);
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const inputRefs = useRef<HTMLInputElement[]>([]);
 
   useEffect(() => {
     // Récupérer le numéro de téléphone
@@ -167,7 +167,11 @@ export default function OTPPage() {
             {otp.map((digit, index) => (
               <input
                 key={index}
-                ref={el => inputRefs.current[index] = el}
+                ref={el => {
+                  if (el) {
+                    inputRefs.current[index] = el;
+                  }
+                }}
                 type="text"
                 inputMode="numeric"
                 maxLength={1}
