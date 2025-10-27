@@ -84,12 +84,12 @@ export default function Header() {
           </button>
 
           {/* CTA Button - Desktop */}
-          <button 
-            onClick={() => setIsPhoneModalOpen(true)}
+          <Link 
+            href="/planifier"
             className="hidden md:block rounded-2xl bg-[var(--primary)] px-4 py-2 sm:px-6 sm:py-2.5 text-xs sm:text-sm font-medium text-white hover:opacity-90 transition-opacity"
           >
             Commencer
-          </button>
+          </Link>
         </div>
 
         {/* Mobile Menu */}
@@ -111,12 +111,12 @@ export default function Header() {
             >
               Contact
             </Link>
-            <button 
-              onClick={() => setIsPhoneModalOpen(true)}
-              className="rounded-2xl bg-[var(--primary)] px-6 py-3 text-sm font-medium text-white hover:opacity-90 transition-opacity text-center mt-2 w-full"
+            <Link 
+              href="/planifier"
+              className="rounded-2xl bg-[var(--primary)] px-6 py-3 text-sm font-medium text-white hover:opacity-90 transition-opacity text-center mt-2 w-full block"
             >
               Commencer
-            </button>
+            </Link>
           </nav>
         )}
       </div>
