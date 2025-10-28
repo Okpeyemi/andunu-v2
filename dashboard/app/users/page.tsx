@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { supabase, type Profile, type UserRole, type AccountStatus } from '@/lib/supabase';
 import Spinner from '@/components/Spinner';
 import DashboardLayout from '@/components/DashboardLayout';
+import NotificationModal from '@/components/NotificationModal';
 
 interface UserWithEmail extends Profile {
   email: string;
@@ -36,6 +37,19 @@ export default function UsersPage() {
     email: '',
     phone: '',
     password: ''
+  });
+  
+  // Modal de notification
+  const [notification, setNotification] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: ''
   });
 
   useEffect(() => {
@@ -158,9 +172,22 @@ export default function UsersPage() {
 
       setIsModalOpen(false);
       setSelectedUser(null);
+      
+      // Afficher notification de succès
+      setNotification({
+        isOpen: true,
+        type: 'success',
+        title: 'Statut mis à jour',
+        message: 'Le statut de l\'utilisateur a été modifié avec succès.'
+      });
     } catch (err: any) {
       console.error('Erreur:', err);
-      alert(`Erreur: ${err.message}`);
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: 'Erreur',
+        message: err.message || 'Une erreur est survenue lors de la mise à jour.'
+      });
     } finally {
       setIsUpdating(false);
     }
@@ -222,7 +249,13 @@ export default function UsersPage() {
         password: ''
       });
 
-      alert('Super administrateur créé avec succès !');
+      // Afficher notification de succès
+      setNotification({
+        isOpen: true,
+        type: 'success',
+        title: 'Administrateur créé',
+        message: 'Le super administrateur a été créé avec succès !'
+      });
     } catch (err: any) {
       console.error('Erreur:', err);
       setCreateError(err.message || 'Erreur lors de la création');
@@ -649,6 +682,15 @@ export default function UsersPage() {
           </div>
         </div>
       )}
+
+      {/* Modal de notification */}
+      <NotificationModal
+        isOpen={notification.isOpen}
+        type={notification.type}
+        title={notification.title}
+        message={notification.message}
+        onClose={() => setNotification({ ...notification, isOpen: false })}
+      />
     </DashboardLayout>
   );
 }
