@@ -83,13 +83,23 @@ export default function Header() {
             )}
           </button>
 
-          {/* CTA Button - Desktop */}
-          <Link 
-            href="/planifier"
-            className="hidden md:block rounded-2xl bg-[var(--primary)] px-4 py-2 sm:px-6 sm:py-2.5 text-xs sm:text-sm font-medium text-white hover:opacity-90 transition-opacity"
-          >
-            Commencer
-          </Link>
+          {/* CTA Buttons - Desktop */}
+          <div className="hidden md:flex items-center gap-3">
+            <a 
+              href={process.env.NEXT_PUBLIC_DASHBOARD_URL || 'http://localhost:3001'}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-2xl border-2 border-[var(--primary)] px-4 py-2 sm:px-6 sm:py-2.5 text-xs sm:text-sm font-medium text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-all"
+            >
+              Login
+            </a>
+            <Link 
+              href="/planifier"
+              className="rounded-2xl border-2 border-[var(--primary)] bg-[var(--primary)] px-4 py-2 sm:px-6 sm:py-2.5 text-xs sm:text-sm font-medium text-white hover:opacity-90 transition-opacity"
+            >
+              Commencer
+            </Link>
+          </div>
         </div>
 
         {/* Mobile Menu */}
@@ -111,9 +121,17 @@ export default function Header() {
             >
               Contact
             </Link>
+            <a 
+              href={process.env.NEXT_PUBLIC_DASHBOARD_URL || 'http://localhost:3001'}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-2xl border-2 border-[var(--primary)] px-6 py-3 text-sm font-medium text-[var(--primary)] hover:bg-[var(--primary)] hover:text-white transition-all text-center mt-2 w-full block"
+            >
+              Login
+            </a>
             <Link 
               href="/planifier"
-              className="rounded-2xl bg-[var(--primary)] px-6 py-3 text-sm font-medium text-white hover:opacity-90 transition-opacity text-center mt-2 w-full block"
+              className="rounded-2xl bg-[var(--primary)] px-6 py-3 text-sm font-medium text-white hover:opacity-90 transition-opacity text-center w-full block"
             >
               Commencer
             </Link>
