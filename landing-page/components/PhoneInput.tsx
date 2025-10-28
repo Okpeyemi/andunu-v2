@@ -7,9 +7,10 @@ interface PhoneInputProps {
   onChange: (value: string) => void;
   className?: string;
   placeholder?: string;
+  disabled?: boolean;
 }
 
-export default function PhoneInput({ value, onChange, className, placeholder }: PhoneInputProps) {
+export default function PhoneInput({ value, onChange, className, placeholder, disabled }: PhoneInputProps) {
   const [error, setError] = useState('');
   const [hint, setHint] = useState('');
 
@@ -80,6 +81,7 @@ export default function PhoneInput({ value, onChange, className, placeholder }: 
         value={value}
         onChange={handleChange}
         placeholder={placeholder || 'Indicatif + numéro (ex: 22961916209)'}
+        disabled={disabled}
         className={className}
       />
       {(error || hint) && (

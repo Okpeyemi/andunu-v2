@@ -2,14 +2,17 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Spinner from '@/components/Spinner';
+import { supabase } from '@/lib/supabase';
 
 interface Step7OTPProps {
   phoneNumber: string;
+  email: string;
+  userId: string;
   onSubmit: () => void;
   onPrev: () => void;
 }
 
-export default function Step7OTP({ phoneNumber, onSubmit, onPrev }: Step7OTPProps) {
+export default function Step7OTP({ phoneNumber, email, userId, onSubmit, onPrev }: Step7OTPProps) {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -90,22 +93,36 @@ export default function Step7OTP({ phoneNumber, onSubmit, onPrev }: Step7OTPProp
     setError('');
 
     try {
-      // TODO: Appeler l'API pour vérifier l'OTP
-      // Pour l'instant, on simule la vérification
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Vérifier l'OTP avec Supabase
+      const { data, error: verifyError } = await supabase.auth.verifyOtp({
+        email: email,
+        token: otpCode,
+        type: 'signup'
+      });
 
-      // Simuler une vérification (accepter 123456 pour les tests)
-      if (otpCode === '123456') {
-        onSubmit();
-      } else {
-        setError('Code incorrect. Veuillez réessayer.');
-        setOtp(['', '', '', '', '', '']);
-        inputRefs.current[0]?.focus();
-        setIsSubmitting(false);
+      if (verifyError) {
+        throw verifyError;
       }
-    } catch (err) {
-      console.error('Erreur:', err);
-      setError('Une erreur est survenue. Veuillez réessayer.');
+
+      if (!data.user) {
+        throw new Error('Erreur lors de la vérification du code');
+      }
+
+      // OTP vérifié avec succès
+      onSubmit();
+    } catch (err: any) {
+      console.error('Erreur vérification OTP:', err);
+      
+      if (err.message?.includes('expired')) {
+        setError('Le code a expiré. Demandez un nouveau code.');
+      } else if (err.message?.includes('invalid')) {
+        setError('Code incorrect. Veuillez réessayer.');
+      } else {
+        setError(err.message || 'Une erreur est survenue. Veuillez réessayer.');
+      }
+      
+      setOtp(['', '', '', '', '', '']);
+      inputRefs.current[0]?.focus();
       setIsSubmitting(false);
     }
   };
@@ -118,15 +135,24 @@ export default function Step7OTP({ phoneNumber, onSubmit, onPrev }: Step7OTPProp
     setError('');
 
     try {
-      // TODO: Appeler l'API pour renvoyer l'OTP
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Renvoyer l'OTP via Supabase
+      const { error: resendError } = await supabase.auth.resend({
+        type: 'signup',
+        email: email
+      });
+
+      if (resendError) {
+        throw resendError;
+      }
       
       // Message de succès
-      alert('Un nouveau code a été envoyé');
-    } catch (err) {
-      console.error('Erreur:', err);
-      setError('Impossible de renvoyer le code. Veuillez réessayer.');
+      setError('');
+      // On pourrait ajouter un message de succès ici
+    } catch (err: any) {
+      console.error('Erreur renvoi OTP:', err);
+      setError(err.message || 'Impossible de renvoyer le code. Veuillez réessayer.');
       setCanResend(true);
+      setCountdown(0);
     }
   };
 
@@ -141,7 +167,7 @@ export default function Step7OTP({ phoneNumber, onSubmit, onPrev }: Step7OTPProp
         Vérification du code
       </h2>
       <p className="text-sm text-gray-500 mb-8 text-center">
-        Code envoyé au {maskPhoneNumber(phoneNumber)}
+        Code envoyé à {email}
       </p>
 
       {/* Inputs OTP */}
@@ -192,7 +218,7 @@ export default function Step7OTP({ phoneNumber, onSubmit, onPrev }: Step7OTPProp
 
       {/* Informations supplémentaires */}
       <p className="text-sm text-gray-500 mb-8 text-center">
-        Vous n'avez pas reçu le code ? Vérifiez vos SMS
+        Vous n'avez pas reçu le code ? Vérifiez votre boîte email (et les spams)
       </p>
 
       {/* Boutons */}
@@ -217,14 +243,6 @@ export default function Step7OTP({ phoneNumber, onSubmit, onPrev }: Step7OTPProp
           Vérifier
         </button>
       </div>
-
-      {/* Info de test en dev */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-xl max-w-md">
-          <p className="text-xs text-blue-600 font-mono mb-1">🔧 Mode développement</p>
-          <p className="text-xs text-gray-600">Code OTP: 123456</p>
-        </div>
-      )}
     </div>
   );
 }
