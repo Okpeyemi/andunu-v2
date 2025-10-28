@@ -104,8 +104,8 @@ export default function OTPPage() {
         // Sauvegarder l'authentification
         sessionStorage.setItem('isAuthenticated', 'true');
         
-        // Rediriger vers le dashboard ou la page précédente
-        router.push('/planifier');
+        // Rediriger vers le dashboard
+        router.push('/');
       } else {
         setError('Code incorrect. Veuillez réessayer.');
         setOtp(['', '', '', '', '', '']);
