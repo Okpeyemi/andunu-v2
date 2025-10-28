@@ -16,7 +16,7 @@ export default function Footer() {
                 Comment pouvons-nous vous aider ?
               </h3>
               <Link 
-                href="#contact" 
+                href="/contact" 
                 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold text-[var(--primary)] hover:underline w-fit cursor-pointer"
               >
                 Contactez-nous.

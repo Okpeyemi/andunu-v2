@@ -147,9 +147,9 @@ export default function ContactForm() {
 
                 {/* Termes et conditions */}
                 <div className="text-sm text-foreground/70">
-                  En envoyant mes informations personnelles, j'accepte que Andunu puisse collecter, 
+                  En envoyant mes informations personnelles, j'accepte que <strong>Andunu</strong> puisse collecter, 
                   traiter et conserver mes données conformément à la{' '}
-                  <Link href="#" className="text-foreground underline hover:text-primary">
+                  <Link href="/politique-de-confidentialite" className="text-foreground underline hover:text-primary">
                     Politique de confidentialité
                   </Link>
                   .

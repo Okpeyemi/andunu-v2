@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Spinner from '@/components/Spinner';
+import { supabase } from '@/lib/supabase';
 
 export default function ConsolePage() {
   const router = useRouter();
@@ -30,25 +31,75 @@ export default function ConsolePage() {
     setIsSubmitting(true);
 
     try {
-      // TODO: Appeler l'API pour vérifier les credentials admin
-      // Pour l'instant, on simule la vérification
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Authentification avec Supabase
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-      // Simuler une vérification (accepter admin@andunu.com / admin123 pour les tests)
-      if (email === 'admin@andunu.com' && password === 'admin123') {
-        // Sauvegarder l'authentification admin
-        sessionStorage.setItem('isAdmin', 'true');
-        sessionStorage.setItem('adminEmail', email);
-        
-        // Rediriger vers le dashboard admin
-        router.push('/admin/dashboard');
-      } else {
-        setError('Email ou mot de passe incorrect');
-        setIsSubmitting(false);
+      if (authError) {
+        throw authError;
       }
-    } catch (err) {
+
+      if (!authData.user) {
+        throw new Error('Aucun utilisateur trouvé');
+      }
+
+      console.log('Utilisateur connecté:', authData.user.id);
+
+      // Attendre un peu pour que la session soit établie
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Récupérer le profil pour vérifier le rôle
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', authData.user.id)
+        .single();
+
+      if (profileError) {
+        console.error('Erreur profil:', profileError);
+        throw new Error(`Impossible de récupérer le profil: ${profileError.message}`);
+      }
+
+      if (!profile) {
+        throw new Error('Profil introuvable');
+      }
+
+      // Vérifier que l'utilisateur est un super_admin
+      if (profile.role !== 'super_admin') {
+        // Déconnecter l'utilisateur
+        await supabase.auth.signOut();
+        setError('Accès refusé. Seuls les super administrateurs peuvent accéder à cette console.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Vérifier que le compte est actif
+      if (profile.status !== 'active') {
+        await supabase.auth.signOut();
+        setError('Votre compte est inactif. Contactez un administrateur.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Mettre à jour la dernière connexion
+      await supabase
+        .from('profiles')
+        .update({ last_login_at: new Date().toISOString() })
+        .eq('id', authData.user.id);
+
+      // Sauvegarder les informations dans sessionStorage
+      sessionStorage.setItem('isAdmin', 'true');
+      sessionStorage.setItem('adminEmail', email);
+      sessionStorage.setItem('adminRole', profile.role);
+      sessionStorage.setItem('adminName', profile.full_name);
+
+      // Rediriger vers le dashboard admin
+      router.push('/');
+    } catch (err: any) {
       console.error('Erreur:', err);
-      setError('Une erreur est survenue. Veuillez réessayer.');
+      setError(err.message || 'Email ou mot de passe incorrect');
       setIsSubmitting(false);
     }
   };
@@ -172,7 +223,7 @@ export default function ConsolePage() {
             <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
               <p className="text-xs text-blue-600 font-mono mb-2">🔧 Mode développement</p>
               <p className="text-xs text-gray-600">Email: admin@andunu.com</p>
-              <p className="text-xs text-gray-600">Mot de passe: admin123</p>
+              <p className="text-xs text-gray-600">Mot de passe: Admin@2025!</p>
             </div>
           )}
         </div>
