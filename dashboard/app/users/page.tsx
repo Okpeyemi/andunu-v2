@@ -26,6 +26,17 @@ export default function UsersPage() {
   const [selectedUser, setSelectedUser] = useState<UserWithEmail | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  
+  // Modal création admin
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [createError, setCreateError] = useState('');
+  const [newAdmin, setNewAdmin] = useState({
+    full_name: '',
+    email: '',
+    phone: '',
+    password: ''
+  });
 
   useEffect(() => {
     checkAuth();
@@ -155,6 +166,71 @@ export default function UsersPage() {
     }
   };
 
+  const createSuperAdmin = async () => {
+    try {
+      setIsCreating(true);
+      setCreateError('');
+
+      // Validation
+      if (!newAdmin.full_name || !newAdmin.email || !newAdmin.phone || !newAdmin.password) {
+        setCreateError('Tous les champs sont obligatoires');
+        return;
+      }
+
+      if (!newAdmin.email.includes('@')) {
+        setCreateError('Email invalide');
+        return;
+      }
+
+      if (newAdmin.password.length < 8) {
+        setCreateError('Le mot de passe doit contenir au moins 8 caractères');
+        return;
+      }
+
+      // Créer l'utilisateur avec Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: newAdmin.email,
+        password: newAdmin.password,
+        options: {
+          data: {
+            full_name: newAdmin.full_name,
+            phone: newAdmin.phone,
+            role: 'super_admin'
+          },
+          emailRedirectTo: undefined
+        }
+      });
+
+      if (authError) throw authError;
+
+      if (!authData.user) {
+        throw new Error('Erreur lors de la création de l\'utilisateur');
+      }
+
+      // Attendre un peu pour que le profil soit créé par le trigger
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Recharger la liste des utilisateurs
+      await fetchUsers();
+
+      // Fermer le modal et réinitialiser le formulaire
+      setIsCreateModalOpen(false);
+      setNewAdmin({
+        full_name: '',
+        email: '',
+        phone: '',
+        password: ''
+      });
+
+      alert('Super administrateur créé avec succès !');
+    } catch (err: any) {
+      console.error('Erreur:', err);
+      setCreateError(err.message || 'Erreur lors de la création');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
   const getStatusBadge = (status: AccountStatus) => {
     const styles = {
       active: 'bg-green-100 text-green-800',
@@ -208,11 +284,22 @@ export default function UsersPage() {
       <div className="max-w-7xl mx-auto p-6">
         {/* Header */}
         <div className="mb-8">
-          <div className="mb-4">
-            <h1 className="text-3xl font-bold text-foreground">Gestion des utilisateurs</h1>
-            <p className="text-gray-600 mt-1">
-              {filteredUsers.length} utilisateur{filteredUsers.length > 1 ? 's' : ''} trouvé{filteredUsers.length > 1 ? 's' : ''}
-            </p>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Gestion des utilisateurs</h1>
+              <p className="text-gray-600 mt-1">
+                {filteredUsers.length} utilisateur{filteredUsers.length > 1 ? 's' : ''} trouvé{filteredUsers.length > 1 ? 's' : ''}
+              </p>
+            </div>
+            <button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-[var(--primary)] text-white rounded-lg hover:opacity-90 transition-opacity font-medium"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Ajouter un admin
+            </button>
           </div>
 
           {/* Filtres */}
@@ -369,7 +456,7 @@ export default function UsersPage() {
 
       {/* Modal de gestion */}
       {isModalOpen && selectedUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-md w-full p-6">
             <h3 className="text-xl font-bold text-foreground mb-4">
               Gérer l'utilisateur
@@ -448,6 +535,115 @@ export default function UsersPage() {
                 className="w-full px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de création d'admin */}
+      {isCreateModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-foreground mb-4">
+              Créer un super administrateur
+            </h3>
+
+            <div className="space-y-4 mb-6">
+              {/* Nom complet */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nom complet *
+                </label>
+                <input
+                  type="text"
+                  value={newAdmin.full_name}
+                  onChange={(e) => setNewAdmin({ ...newAdmin, full_name: e.target.value })}
+                  placeholder="Ex: Jean Dupont"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
+                />
+              </div>
+
+              {/* Email */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email *
+                </label>
+                <input
+                  type="email"
+                  value={newAdmin.email}
+                  onChange={(e) => setNewAdmin({ ...newAdmin, email: e.target.value })}
+                  placeholder="admin@example.com"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Utilisez un email valide (Gmail, Outlook, etc.)
+                </p>
+              </div>
+
+              {/* Téléphone */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Téléphone *
+                </label>
+                <input
+                  type="tel"
+                  value={newAdmin.phone}
+                  onChange={(e) => setNewAdmin({ ...newAdmin, phone: e.target.value })}
+                  placeholder="+229 XX XX XX XX"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
+                />
+              </div>
+
+              {/* Mot de passe */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Mot de passe *
+                </label>
+                <input
+                  type="password"
+                  value={newAdmin.password}
+                  onChange={(e) => setNewAdmin({ ...newAdmin, password: e.target.value })}
+                  placeholder="Minimum 8 caractères"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Le mot de passe doit contenir au moins 8 caractères
+                </p>
+              </div>
+
+              {/* Message d'erreur */}
+              {createError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-600">
+                  {createError}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              <button
+                onClick={createSuperAdmin}
+                disabled={isCreating}
+                className="w-full px-4 py-2.5 bg-[var(--primary)] text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+              >
+                {isCreating ? 'Création en cours...' : 'Créer l\'administrateur'}
+              </button>
+
+              <button
+                onClick={() => {
+                  setIsCreateModalOpen(false);
+                  setCreateError('');
+                  setNewAdmin({
+                    full_name: '',
+                    email: '',
+                    phone: '',
+                    password: ''
+                  });
+                }}
+                disabled={isCreating}
+                className="w-full px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Annuler
               </button>
             </div>
           </div>
