@@ -6,13 +6,12 @@ import { supabase } from '@/lib/supabase';
 
 interface Step7OTPProps {
   phoneNumber: string;
-  email: string;
   userId: string;
   onSubmit: () => void;
   onPrev: () => void;
 }
 
-export default function Step7OTP({ phoneNumber, email, userId, onSubmit, onPrev }: Step7OTPProps) {
+export default function Step7OTP({ phoneNumber, userId, onSubmit, onPrev }: Step7OTPProps) {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -93,11 +92,11 @@ export default function Step7OTP({ phoneNumber, email, userId, onSubmit, onPrev 
     setError('');
 
     try {
-      // Vérifier l'OTP avec Supabase
+      // Vérifier l'OTP avec Supabase (SMS)
       const { data, error: verifyError } = await supabase.auth.verifyOtp({
-        email: email,
+        phone: phoneNumber,
         token: otpCode,
-        type: 'signup'
+        type: 'sms'
       });
 
       if (verifyError) {
@@ -135,10 +134,10 @@ export default function Step7OTP({ phoneNumber, email, userId, onSubmit, onPrev 
     setError('');
 
     try {
-      // Renvoyer l'OTP via Supabase
+      // Renvoyer l'OTP via Supabase (SMS)
       const { error: resendError } = await supabase.auth.resend({
-        type: 'signup',
-        email: email
+        type: 'sms',
+        phone: phoneNumber
       });
 
       if (resendError) {
@@ -167,7 +166,7 @@ export default function Step7OTP({ phoneNumber, email, userId, onSubmit, onPrev 
         Vérification du code
       </h2>
       <p className="text-sm text-gray-500 mb-8 text-center">
-        Code envoyé à {email}
+        Code envoyé au {maskPhoneNumber(phoneNumber)}
       </p>
 
       {/* Inputs OTP */}
@@ -218,7 +217,7 @@ export default function Step7OTP({ phoneNumber, email, userId, onSubmit, onPrev 
 
       {/* Informations supplémentaires */}
       <p className="text-sm text-gray-500 mb-8 text-center">
-        Vous n'avez pas reçu le code ? Vérifiez votre boîte email (et les spams)
+        Vous n'avez pas reçu le code ? Vérifiez vos SMS
       </p>
 
       {/* Boutons */}

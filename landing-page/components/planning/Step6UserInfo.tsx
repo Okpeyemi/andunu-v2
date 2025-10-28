@@ -6,13 +6,12 @@ import Spinner from '@/components/Spinner';
 import { supabase } from '@/lib/supabase';
 
 interface Step5UserInfoProps {
-  onSubmit: (info: { fullName: string; phone: string; email: string; userId: string }) => void;
+  onSubmit: (info: { fullName: string; phone: string; userId: string }) => void;
   onPrev: () => void;
 }
 
 export default function Step5UserInfo({ onSubmit, onPrev }: Step5UserInfoProps) {
   const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -27,11 +26,6 @@ export default function Step5UserInfo({ onSubmit, onPrev }: Step5UserInfoProps) 
     // Validation
     if (!fullName.trim()) {
       setError('Le nom complet est requis');
-      return;
-    }
-
-    if (!email.trim() || !email.includes('@')) {
-      setError('Email invalide');
       return;
     }
 
@@ -53,18 +47,19 @@ export default function Step5UserInfo({ onSubmit, onPrev }: Step5UserInfoProps) 
     setIsSubmitting(true);
 
     try {
-      // Créer le compte utilisateur avec Supabase
+      const formattedPhone = phone.startsWith('+') ? phone : `+${phone}`;
+      
+      // Créer le compte utilisateur avec Supabase (OTP par SMS)
       const { data, error: signUpError } = await supabase.auth.signUp({
-        email: email.trim(),
+        phone: formattedPhone,
         password: password,
-        phone: phone.startsWith('+') ? phone : `+${phone}`,
         options: {
           data: {
             full_name: fullName.trim(),
-            phone: phone.startsWith('+') ? phone : `+${phone}`,
+            phone: formattedPhone,
             role: 'client'
           },
-          emailRedirectTo: undefined
+          channel: 'sms' // OTP par SMS
         }
       });
 
@@ -77,8 +72,7 @@ export default function Step5UserInfo({ onSubmit, onPrev }: Step5UserInfoProps) 
       // Passer au step suivant avec les infos
       onSubmit({ 
         fullName: fullName.trim(), 
-        phone: phone.startsWith('+') ? phone : `+${phone}`,
-        email: email.trim(),
+        phone: formattedPhone,
         userId: data.user.id
       });
     } catch (err: any) {
@@ -90,8 +84,6 @@ export default function Step5UserInfo({ onSubmit, onPrev }: Step5UserInfoProps) 
 
   const isValid = 
     fullName.trim() && 
-    email.trim() && 
-    email.includes('@') &&
     phone.trim() && 
     phone.length >= 10 &&
     password.length >= 8 &&
@@ -115,22 +107,6 @@ export default function Step5UserInfo({ onSubmit, onPrev }: Step5UserInfoProps) 
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             placeholder="Entrez votre nom complet"
-            disabled={isSubmitting}
-            className="w-full px-4 py-4 rounded-2xl border-2 border-gray-200 focus:border-[var(--primary)] focus:outline-none text-lg disabled:opacity-50 disabled:cursor-not-allowed"
-          />
-        </div>
-
-        {/* Email */}
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-            Email *
-          </label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="exemple@email.com"
             disabled={isSubmitting}
             className="w-full px-4 py-4 rounded-2xl border-2 border-gray-200 focus:border-[var(--primary)] focus:outline-none text-lg disabled:opacity-50 disabled:cursor-not-allowed"
           />
