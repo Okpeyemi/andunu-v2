@@ -88,9 +88,9 @@ export default function DashboardSidebar() {
         }`}
       >
         {/* Logo */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-gray-200">
+        <div className={`h-20 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} px-4 border-b border-gray-200`}>
           {!isCollapsed && (
-            <h2 className="text-2xl font-bold text-[var(--primary)]">andunu</h2>
+            <h2 className="text-3xl font-bold text-[var(--primary)]">andunu</h2>
           )}
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
@@ -115,12 +115,12 @@ export default function DashboardSidebar() {
         </div>
 
         {/* Menu Items */}
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        <nav className="flex-1 flex flex-col items-center justify-start px-3 py-4 space-y-1 overflow-y-auto">
           {menuItems.map((item) => (
             <button
               key={item.href}
               onClick={() => router.push(item.href)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
+              className={`${isCollapsed ? 'w-fit' : 'w-full'} flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
                 isActive(item.href)
                   ? 'bg-orange-50 text-[var(--primary)] font-medium'
                   : 'text-gray-700 hover:bg-gray-50'
