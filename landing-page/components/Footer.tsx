@@ -93,12 +93,33 @@ export default function Footer() {
 
         {/* Bottom Section - Large Logo */}
         <FadeIn delay={0.3} direction="up">
-          <div className="flex justify-center items-center overflow-hidden">
+          <div className="flex justify-center items-center overflow-hidden mb-8">
             <h2 className="text-[50px] sm:text-[80px] md:text-[140px] lg:text-[200px] xl:text-[280px] font-bold !text-white leading-none">
               andunu
             </h2>
           </div>
         </FadeIn>
+
+        {/* Legal Links */}
+        <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-8 pt-8 border-t border-white/10">
+          <Link 
+            href="/politique-de-confidentialite"
+            className="text-sm text-white/70 hover:text-[var(--primary)] transition-colors"
+          >
+            Politique de confidentialité
+          </Link>
+          <span className="hidden sm:inline text-white/30">•</span>
+          <Link 
+            href="/conditions-utilisation"
+            className="text-sm text-white/70 hover:text-[var(--primary)] transition-colors"
+          >
+            Conditions d'utilisation
+          </Link>
+          <span className="hidden sm:inline text-white/30">•</span>
+          <p className="text-sm text-white/50">
+            © {new Date().getFullYear()} Andunu. Tous droits réservés.
+          </p>
+        </div>
       </div>
     </footer>
   );
