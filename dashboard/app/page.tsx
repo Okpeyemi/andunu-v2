@@ -1,28 +1,14 @@
 'use client';
 
-import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import DashboardHeader from '@/components/DashboardHeader';
+import DashboardLayout from '@/components/DashboardLayout';
 
 export default function AdminDashboard() {
   const router = useRouter();
 
-  useEffect(() => {
-    // Vérifier si l'utilisateur est admin
-    const isAdmin = sessionStorage.getItem('isAdmin');
-
-    if (!isAdmin || isAdmin !== 'true') {
-      router.push('/console');
-      return;
-    }
-  }, [router]);
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      <DashboardHeader />
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-6 py-8">
+    <DashboardLayout>
+      <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* Card 1 */}
@@ -134,7 +120,7 @@ export default function AdminDashboard() {
             <p className="text-sm text-gray-400">Les commandes apparaîtront ici</p>
           </div>
         </div>
-      </main>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 }

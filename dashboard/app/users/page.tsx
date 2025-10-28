@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase, type Profile, type UserRole, type AccountStatus } from '@/lib/supabase';
 import Spinner from '@/components/Spinner';
-import DashboardHeader from '@/components/DashboardHeader';
+import DashboardLayout from '@/components/DashboardLayout';
 
 interface UserWithEmail extends Profile {
   email: string;
@@ -195,16 +195,16 @@ export default function UsersPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Spinner size="lg" />
-      </div>
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-full">
+          <Spinner size="lg" />
+        </div>
+      </DashboardLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <DashboardHeader />
-      
+    <DashboardLayout>
       <div className="max-w-7xl mx-auto p-6">
         {/* Header */}
         <div className="mb-8">
@@ -453,6 +453,6 @@ export default function UsersPage() {
           </div>
         </div>
       )}
-    </div>
+    </DashboardLayout>
   );
 }
