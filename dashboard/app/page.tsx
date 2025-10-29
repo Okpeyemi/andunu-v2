@@ -1,14 +1,122 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/DashboardLayout';
+import Spinner from '@/components/Spinner';
+import { supabase, type Commande } from '@/lib/supabase';
 
 export default function AdminDashboard() {
   const router = useRouter();
+  const [commandes, setCommandes] = useState<Commande[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState({
+    today: 0,
+    todayRevenue: 0,
+    activeClients: 0,
+    pending: 0,
+  });
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Récupérer toutes les commandes
+      const { data: allCommandes, error } = await supabase
+        .from('commandes')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Erreur:', error);
+        return;
+      }
+
+      setCommandes(allCommandes || []);
+
+      // Calculer les statistiques
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const todayCommandes = (allCommandes || []).filter(cmd => {
+        const cmdDate = new Date(cmd.created_at);
+        cmdDate.setHours(0, 0, 0, 0);
+        return cmdDate.getTime() === today.getTime();
+      });
+
+      const todayRevenue = todayCommandes.reduce((sum, cmd) => sum + cmd.montant_total, 0);
+      
+      // Clients uniques (par téléphone)
+      const uniqueClients = new Set((allCommandes || []).map(cmd => cmd.client_telephone));
+      
+      const pendingCommandes = (allCommandes || []).filter(cmd => cmd.statut === 'en_attente');
+
+      setStats({
+        today: todayCommandes.length,
+        todayRevenue,
+        activeClients: uniqueClients.size,
+        pending: pendingCommandes.length,
+      });
+    } catch (err) {
+      console.error('Erreur:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getStatutColor = (statut: string) => {
+    switch (statut) {
+      case 'confirmee':
+        return 'bg-green-100 text-green-800';
+      case 'en_preparation':
+        return 'bg-blue-100 text-blue-800';
+      case 'en_livraison':
+        return 'bg-purple-100 text-purple-800';
+      case 'livree':
+        return 'bg-gray-100 text-gray-800';
+      case 'annulee':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-yellow-100 text-yellow-800';
+    }
+  };
+
+  const getStatutLabel = (statut: string) => {
+    switch (statut) {
+      case 'en_attente':
+        return 'En attente';
+      case 'confirmee':
+        return 'Confirmée';
+      case 'en_preparation':
+        return 'En préparation';
+      case 'en_livraison':
+        return 'En livraison';
+      case 'livree':
+        return 'Livrée';
+      case 'annulee':
+        return 'Annulée';
+      default:
+        return statut;
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('fr-FR', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
 
   return (
     <DashboardLayout>
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="p-6">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {/* Card 1 */}
@@ -20,7 +128,9 @@ export default function AdminDashboard() {
                 </svg>
               </div>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-1">0</h3>
+            <h3 className="text-2xl font-bold text-gray-900 mb-1">
+              {isLoading ? <Spinner size="sm" /> : stats.today}
+            </h3>
             <p className="text-sm text-gray-600">Commandes aujourd'hui</p>
           </div>
 
@@ -33,7 +143,9 @@ export default function AdminDashboard() {
                 </svg>
               </div>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-1">0 FCFA</h3>
+            <h3 className="text-2xl font-bold text-gray-900 mb-1">
+              {isLoading ? <Spinner size="sm" /> : `${stats.todayRevenue.toLocaleString()} FCFA`}
+            </h3>
             <p className="text-sm text-gray-600">Revenus du jour</p>
           </div>
 
@@ -46,7 +158,9 @@ export default function AdminDashboard() {
                 </svg>
               </div>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-1">0</h3>
+            <h3 className="text-2xl font-bold text-gray-900 mb-1">
+              {isLoading ? <Spinner size="sm" /> : stats.activeClients}
+            </h3>
             <p className="text-sm text-gray-600">Clients actifs</p>
           </div>
 
@@ -59,7 +173,9 @@ export default function AdminDashboard() {
                 </svg>
               </div>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-1">0</h3>
+            <h3 className="text-2xl font-bold text-gray-900 mb-1">
+              {isLoading ? <Spinner size="sm" /> : stats.pending}
+            </h3>
             <p className="text-sm text-gray-600">Commandes en attente</p>
           </div>
         </div>
@@ -111,14 +227,74 @@ export default function AdminDashboard() {
 
         {/* Recent Orders */}
         <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Commandes récentes</h2>
-          <div className="text-center py-12">
-            <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-            </svg>
-            <p className="text-gray-500 mb-2">Aucune commande pour le moment</p>
-            <p className="text-sm text-gray-400">Les commandes apparaîtront ici</p>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Commandes récentes</h2>
+            <button
+              onClick={() => router.push('/orders')}
+              className="text-sm text-[var(--primary)] hover:underline font-medium"
+            >
+              Voir tout
+            </button>
           </div>
+
+          {isLoading ? (
+            <div className="flex justify-center py-12">
+              <Spinner size="lg" />
+            </div>
+          ) : commandes.length === 0 ? (
+            <div className="text-center py-12">
+              <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+              </svg>
+              <p className="text-gray-500 mb-2">Aucune commande pour le moment</p>
+              <p className="text-sm text-gray-400">Les commandes apparaîtront ici</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="border-b border-gray-200">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Client</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Téléphone</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Jours</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Montant</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Statut</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Date</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {commandes.slice(0, 5).map((commande) => (
+                    <tr 
+                      key={commande.id} 
+                      onClick={() => router.push('/orders')}
+                      className="hover:bg-gray-50 transition-colors cursor-pointer"
+                    >
+                      <td className="px-4 py-3 text-sm font-medium text-foreground">
+                        {commande.client_nom}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {commande.client_telephone}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {commande.jours_selectionnes.length} jour(s)
+                      </td>
+                      <td className="px-4 py-3 text-sm font-medium text-foreground">
+                        {commande.montant_total.toLocaleString()} FCFA
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getStatutColor(commande.statut)}`}>
+                          {getStatutLabel(commande.statut)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {formatDate(commande.created_at)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
     </DashboardLayout>
