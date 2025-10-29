@@ -25,7 +25,45 @@ export interface Profile {
   updated_at: string;
 }
 
-// Types pour les commandes
+// Types pour les repas et accompagnements
+export interface Repas {
+  id: string;
+  nom: string;
+  description?: string;
+  prix: number;
+  image_url?: string;
+  accompagnements_disponibles: string[]; // Array de noms d'accompagnements
+  disponible: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Accompagnement {
+  id: string;
+  nom: string;
+  description?: string;
+  prix: number; // Prix additionnel
+  disponible: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateRepasInput {
+  nom: string;
+  description?: string;
+  prix: number;
+  image_url?: string;
+  accompagnements_disponibles?: string[];
+  disponible?: boolean;
+}
+
+export interface CreateAccompagnementInput {
+  nom: string;
+  description?: string;
+  prix?: number;
+  disponible?: boolean;
+}
+
 export type StatutPaiement = 'pending' | 'paid' | 'failed' | 'refunded';
 export type StatutCommande = 'en_attente' | 'confirmee' | 'en_preparation' | 'en_livraison' | 'livree' | 'annulee';
 export type ModePaiement = 'daily' | 'weekly';

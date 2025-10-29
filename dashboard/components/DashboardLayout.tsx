@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardHeader from './DashboardHeader';
 import DashboardSidebar from './DashboardSidebar';
+import Spinner from './Spinner';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -11,16 +12,34 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const router = useRouter();
+  const [isChecking, setIsChecking] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
     // Vérifier si l'utilisateur est admin
-    const isAdmin = sessionStorage.getItem('isAdmin');
+    const checkAuth = () => {
+      const isAdmin = sessionStorage.getItem('isAdmin');
 
-    if (!isAdmin || isAdmin !== 'true') {
-      router.push('/console');
-      return;
-    }
+      if (!isAdmin || isAdmin !== 'true') {
+        router.replace('/console');
+        return;
+      }
+
+      setIsAuthenticated(true);
+      setIsChecking(false);
+    };
+
+    checkAuth();
   }, [router]);
+
+  // Afficher un écran de chargement pendant la vérification
+  if (isChecking || !isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
