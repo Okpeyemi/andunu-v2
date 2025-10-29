@@ -3,9 +3,14 @@
 import { useState } from 'react';
 import Spinner from '@/components/Spinner';
 
+interface MealDetails {
+  mainDish: string;
+  ingredients: string[];
+}
+
 interface Step7PaymentProps {
   selectedDays: string[];
-  meals: Record<string, string>;
+  meals: Record<string, MealDetails>;
   location: string;
   deliveryTime: string;
   userInfo: { fullName: string; phone: string };
@@ -151,9 +156,16 @@ export default function Step7Payment({
           </h3>
           <div className="pl-7 space-y-2">
             {selectedDays.map((day) => (
-              <div key={day} className="flex justify-between items-center text-gray-700">
-                <span className="font-medium">{day} :</span>
-                <span className="text-[var(--primary)]">{meals[day]}</span>
+              <div key={day} className="text-gray-700">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium">{day} :</span>
+                  <span className="text-[var(--primary)]">{meals[day]?.mainDish}</span>
+                </div>
+                {meals[day]?.ingredients && meals[day].ingredients.length > 0 && (
+                  <div className="text-sm text-gray-500 ml-4 mt-1">
+                    Avec : {meals[day].ingredients.join(', ')}
+                  </div>
+                )}
               </div>
             ))}
           </div>

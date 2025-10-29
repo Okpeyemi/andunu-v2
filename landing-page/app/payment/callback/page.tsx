@@ -5,9 +5,14 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Spinner from '@/components/Spinner';
 import Receipt from '@/components/Receipt';
 
+interface MealDetails {
+  mainDish: string;
+  ingredients: string[];
+}
+
 interface OrderData {
   selectedDays: string[];
-  meals: Record<string, string>;
+  meals: Record<string, MealDetails>;
   location: string;
   deliveryTime: string;
   userInfo: {

@@ -8,34 +8,32 @@ import Step3LocationSelection from '@/components/planning/Step3LocationSelection
 import Step4DeliveryTime from '@/components/planning/Step4DeliveryTime';
 import Step5Motivation from '@/components/planning/Step5Motivation';
 import Step6UserInfo from '@/components/planning/Step6UserInfo';
-import Step7OTP from '@/components/planning/Step7OTP';
-import Step8Payment from '@/components/planning/Step8Payment';
+import Step7Payment from '@/components/planning/Step7Payment';
 import DevPaymentInfo from '@/components/DevPaymentInfo';
+
+interface MealDetails {
+  mainDish: string;
+  ingredients: string[];
+}
 
 export default function PlanifierPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
-  const [meals, setMeals] = useState<Record<string, string>>({});
+  const [meals, setMeals] = useState<Record<string, MealDetails>>({});
   const [location, setLocation] = useState('');
   const [deliveryTime, setDeliveryTime] = useState('');
   const [userInfo, setUserInfo] = useState({ fullName: '', phone: '' });
   const [paymentOption, setPaymentOption] = useState<'daily' | 'weekly' | null>(null);
-  const [verifiedPhone, setVerifiedPhone] = useState<string>(''); // Numéro vérifié par OTP
 
   const handleNext = () => {
-    if (currentStep < 8) {
+    if (currentStep < 7) {
       setCurrentStep(currentStep + 1);
     }
   };
 
   const handlePrev = () => {
     if (currentStep > 1) {
-      // Si on est au step 8 et qu'on revient en arrière, sauter le step 7 (OTP)
-      if (currentStep === 8) {
-        setCurrentStep(6);
-      } else {
-        setCurrentStep(currentStep - 1);
-      }
+      setCurrentStep(currentStep - 1);
     }
   };
 
@@ -44,7 +42,7 @@ export default function PlanifierPage() {
     handleNext();
   };
 
-  const handleMealsSubmit = (selectedMeals: Record<string, string>) => {
+  const handleMealsSubmit = (selectedMeals: Record<string, MealDetails>) => {
     setMeals(selectedMeals);
     handleNext();
   };
@@ -61,22 +59,6 @@ export default function PlanifierPage() {
 
   const handleUserInfoSubmit = (info: { fullName: string; phone: string }) => {
     setUserInfo(info);
-    
-    // Vérifier si le numéro est déjà vérifié
-    if (info.phone === verifiedPhone) {
-      // Numéro déjà vérifié, sauter l'OTP et aller directement au paiement
-      setCurrentStep(8);
-    } else {
-      // Nouveau numéro, afficher l'OTP
-      // TODO: Envoyer l'OTP au numéro de téléphone
-      handleNext();
-    }
-  };
-
-  const handleOTPSubmit = () => {
-    // OTP vérifié, sauvegarder le numéro comme vérifié
-    setVerifiedPhone(userInfo.phone);
-    // Passer au paiement
     handleNext();
   };
 
@@ -108,7 +90,7 @@ export default function PlanifierPage() {
       {/* Indicateur de progression */}
       <div className="max-w-4xl mx-auto px-6 mb-8">
         <div className="flex items-center justify-center gap-2">
-          {[1, 2, 3, 4, 5, 6, 7, 8].map((step) => (
+          {[1, 2, 3, 4, 5, 6, 7].map((step) => (
             <div
               key={step}
               className={`h-2 flex-1 rounded-full transition-all ${
@@ -122,7 +104,7 @@ export default function PlanifierPage() {
           ))}
         </div>
         <div className="text-center mt-2 text-sm text-gray-600">
-          Étape {currentStep === 8 && verifiedPhone ? '7' : currentStep} sur {verifiedPhone ? '7' : '8'}
+          Étape {currentStep} sur 7
         </div>
       </div>
 
@@ -157,14 +139,7 @@ export default function PlanifierPage() {
           <Step6UserInfo onSubmit={handleUserInfoSubmit} onPrev={handlePrev} />
         )}
         {currentStep === 7 && (
-          <Step7OTP
-            phoneNumber={userInfo.phone}
-            onSubmit={handleOTPSubmit}
-            onPrev={handlePrev}
-          />
-        )}
-        {currentStep === 8 && (
-          <Step8Payment
+          <Step7Payment
             selectedDays={selectedDays}
             meals={meals}
             location={location}

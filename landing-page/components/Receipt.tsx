@@ -2,11 +2,16 @@
 
 import { useRef } from 'react';
 
+interface MealDetails {
+  mainDish: string;
+  ingredients: string[];
+}
+
 interface ReceiptProps {
   transactionId: string;
   orderData: {
     selectedDays: string[];
-    meals: Record<string, string>;
+    meals: Record<string, MealDetails>;
     location: string;
     deliveryTime: string;
     userInfo: {
@@ -274,7 +279,7 @@ export default function Receipt({ transactionId, orderData }: ReceiptProps) {
               ${orderData.selectedDays.map(day => `
                 <div class="menu-item">
                   <span class="day">${day}</span>
-                  <span class="meal">${orderData.meals[day]}</span>
+                  <span class="meal">${orderData.meals[day]?.mainDish || 'Non défini'}</span>
                 </div>
               `).join('')}
             </div>
@@ -427,10 +432,17 @@ export default function Receipt({ transactionId, orderData }: ReceiptProps) {
             {orderData.selectedDays.map((day) => (
               <div
                 key={day}
-                className="flex justify-between items-center py-3 px-4 bg-gray-50 rounded-lg"
+                className="py-3 px-4 bg-gray-50 rounded-lg"
               >
-                <span className="font-medium text-foreground">{day}</span>
-                <span className="text-[var(--primary)] font-medium">{orderData.meals[day]}</span>
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-foreground">{day}</span>
+                  <span className="text-[var(--primary)] font-medium">{orderData.meals[day]?.mainDish || 'Non défini'}</span>
+                </div>
+                {orderData.meals[day]?.ingredients && orderData.meals[day].ingredients.length > 0 && (
+                  <div className="text-sm text-gray-500 mt-1">
+                    Avec : {orderData.meals[day].ingredients.join(', ')}
+                  </div>
+                )}
               </div>
             ))}
           </div>
