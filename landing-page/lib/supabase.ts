@@ -24,3 +24,42 @@ export interface Profile {
   created_at: string;
   updated_at: string;
 }
+
+// Types pour les commandes
+export type StatutPaiement = 'pending' | 'paid' | 'failed' | 'refunded';
+export type StatutCommande = 'en_attente' | 'confirmee' | 'en_preparation' | 'en_livraison' | 'livree' | 'annulee';
+export type ModePaiement = 'daily' | 'weekly';
+
+export interface MealDetails {
+  mainDish: string;
+  ingredients: string[];
+}
+
+export interface Commande {
+  id: string;
+  client_nom: string;
+  client_telephone: string;
+  adresse_livraison: string;
+  heure_livraison: string;
+  jours_selectionnes: string[];
+  repas: Record<string, MealDetails>;
+  mode_paiement: ModePaiement;
+  montant_total: number;
+  transaction_id?: string;
+  statut_paiement: StatutPaiement;
+  statut: StatutCommande;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateCommandeInput {
+  client_nom: string;
+  client_telephone: string;
+  adresse_livraison: string;
+  heure_livraison: string;
+  jours_selectionnes: string[];
+  repas: Record<string, MealDetails>;
+  mode_paiement: ModePaiement;
+  montant_total: number;
+  transaction_id?: string;
+}

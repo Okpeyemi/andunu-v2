@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Spinner from '@/components/Spinner';
 import Receipt from '@/components/Receipt';
+import { supabase } from '@/lib/supabase';
 
 interface MealDetails {
   mainDish: string;
@@ -30,6 +31,7 @@ export default function PaymentCallbackPage() {
   const [message, setMessage] = useState('Vérification du paiement...');
   const [orderData, setOrderData] = useState<OrderData | null>(null);
   const [transactionId, setTransactionId] = useState<string>('');
+  const [commandeId, setCommandeId] = useState<string>('');
 
   useEffect(() => {
     const txId = searchParams.get('id');
@@ -45,10 +47,16 @@ export default function PaymentCallbackPage() {
 
     // Récupérer les données de commande depuis localStorage
     const storedOrderData = localStorage.getItem('orderData');
+    const storedCommandeId = localStorage.getItem('commandeId');
+    
     if (storedOrderData) {
       try {
         const parsedData = JSON.parse(storedOrderData);
         setOrderData(parsedData);
+        
+        // Récupérer l'ID de commande
+        const cmdId = parsedData.commandeId || storedCommandeId || '';
+        setCommandeId(cmdId);
       } catch (error) {
         console.error('Erreur lors de la récupération des données:', error);
       }
@@ -59,10 +67,37 @@ export default function PaymentCallbackPage() {
       setStatus('success');
       setMessage('Paiement réussi ! Votre commande a été confirmée.');
       
+      // Mettre à jour le statut de paiement dans Supabase
+      const updatePaymentStatus = async () => {
+        const cmdId = storedCommandeId || (storedOrderData ? JSON.parse(storedOrderData).commandeId : null);
+        if (cmdId) {
+          await supabase
+            .from('commandes')
+            .update({ 
+              statut_paiement: 'paid',
+              statut: 'confirmee'
+            })
+            .eq('id', cmdId);
+        }
+      };
+      updatePaymentStatus();
+      
       // Ne pas rediriger automatiquement pour permettre le téléchargement du reçu
     } else if (paymentStatus === 'canceled') {
       setStatus('error');
       setMessage('Paiement annulé. Vous pouvez réessayer.');
+      
+      // Mettre à jour le statut dans Supabase
+      const updatePaymentStatus = async () => {
+        const cmdId = storedCommandeId || (storedOrderData ? JSON.parse(storedOrderData).commandeId : null);
+        if (cmdId) {
+          await supabase
+            .from('commandes')
+            .update({ statut_paiement: 'failed' })
+            .eq('id', cmdId);
+        }
+      };
+      updatePaymentStatus();
       
       // Rediriger vers la page de planification après 5 secondes
       setTimeout(() => {
@@ -95,14 +130,27 @@ export default function PaymentCallbackPage() {
               </svg>
             </div>
             <h1 className="text-3xl font-bold text-foreground mb-2">Paiement réussi !</h1>
-            <p className="text-gray-600 mb-6">Votre commande a été confirmée</p>
+            <p className="text-gray-600 mb-2">Votre commande a été confirmée</p>
+            {commandeId && (
+              <div className="bg-[var(--primary)]/10 border-2 border-[var(--primary)] rounded-xl px-6 py-4 mb-6">
+                <p className="text-sm text-gray-600 mb-1">Numéro de commande</p>
+                <p className="text-2xl font-bold text-[var(--primary)] font-mono">{commandeId.slice(0, 8).toUpperCase()}</p>
+                <p className="text-xs text-gray-500 mt-2">Conservez ce numéro pour suivre votre commande</p>
+              </div>
+            )}
           </div>
 
           {/* Reçu */}
           <Receipt transactionId={transactionId} orderData={orderData} />
 
-          {/* Bouton retour */}
-          <div className="mt-8 text-center print:hidden">
+          {/* Boutons d'action */}
+          <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center print:hidden">
+            <button
+              onClick={() => router.push('/suivi-commande')}
+              className="px-8 py-3 bg-[var(--primary)] text-white rounded-2xl hover:opacity-90 transition-all font-medium"
+            >
+              Suivre ma commande
+            </button>
             <button
               onClick={() => router.push('/')}
               className="px-8 py-3 bg-gray-200 text-foreground rounded-2xl hover:bg-gray-300 transition-all font-medium"

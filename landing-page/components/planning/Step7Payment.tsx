@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Spinner from '@/components/Spinner';
+import { supabase, type CreateCommandeInput } from '@/lib/supabase';
 
 interface MealDetails {
   mainDish: string;
@@ -50,6 +51,42 @@ export default function Step7Payment({
       const [firstName, ...lastNameParts] = userInfo.fullName.split(' ');
       const lastName = lastNameParts.join(' ') || firstName;
 
+      // 1. Créer la commande dans Supabase
+      const commandeData: CreateCommandeInput = {
+        client_nom: userInfo.fullName,
+        client_telephone: userInfo.phone,
+        adresse_livraison: location,
+        heure_livraison: deliveryTime,
+        jours_selectionnes: selectedDays,
+        repas: meals,
+        mode_paiement: selectedOption,
+        montant_total: totalAmount,
+      };
+
+      const { data: commande, error: commandeError } = await supabase
+        .from('commandes')
+        .insert([commandeData])
+        .select()
+        .single();
+
+      if (commandeError) {
+        console.error('Erreur création commande:', commandeError);
+        console.error('Détails erreur:', {
+          message: commandeError.message,
+          details: commandeError.details,
+          hint: commandeError.hint,
+          code: commandeError.code
+        });
+        throw new Error(`Erreur lors de la création de la commande: ${commandeError.message || 'Erreur inconnue'}`);
+      }
+
+      if (!commande) {
+        throw new Error('Commande non créée');
+      }
+
+      // Sauvegarder l'ID de commande dans localStorage
+      localStorage.setItem('commandeId', commande.id);
+
       // Sauvegarder les données de commande dans localStorage pour le reçu
       const orderData = {
         selectedDays,
@@ -59,10 +96,11 @@ export default function Step7Payment({
         userInfo,
         paymentOption: selectedOption,
         amount: totalAmount,
+        commandeId: commande.id,
       };
       localStorage.setItem('orderData', JSON.stringify(orderData));
 
-      // Créer la transaction FedaPay
+      // 2. Créer la transaction FedaPay
       const response = await fetch('/api/payment/create-transaction', {
         method: 'POST',
         headers: {
@@ -70,13 +108,14 @@ export default function Step7Payment({
         },
         body: JSON.stringify({
           amount: totalAmount,
-          description: `Commande Andunu - ${numberOfDays} jour(s) - ${selectedOption === 'daily' ? 'Paiement par jour' : 'Paiement hebdomadaire'}`,
+          description: `Commande Andunu #${commande.id.slice(0, 8)} - ${numberOfDays} jour(s)`,
           customer: {
             firstname: firstName,
             lastname: lastName,
             phone: userInfo.phone,
           },
           metadata: {
+            commandeId: commande.id,
             selectedDays: selectedDays.join(', '),
             meals: JSON.stringify(meals),
             location,
@@ -92,7 +131,15 @@ export default function Step7Payment({
         throw new Error(data.error || 'Erreur lors de la création de la transaction');
       }
 
-      // Rediriger vers la page de paiement FedaPay
+      // 3. Mettre à jour la commande avec le transaction_id
+      if (data.transactionId) {
+        await supabase
+          .from('commandes')
+          .update({ transaction_id: data.transactionId })
+          .eq('id', commande.id);
+      }
+
+      // 4. Rediriger vers la page de paiement FedaPay
       if (data.url) {
         window.location.href = data.url;
       } else {
