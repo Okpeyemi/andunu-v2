@@ -234,7 +234,7 @@ export default function SettingsPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex-1 px-6 py-4 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                  className={`flex-1 px-6 py-4 text-sm font-medium cursor-pointer transition-colors flex items-center justify-center gap-2 ${
                     activeTab === tab.id
                       ? 'border-b-2 border-[var(--primary)] text-[var(--primary)] bg-orange-50'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -322,7 +322,7 @@ export default function SettingsPage() {
                   <button
                     onClick={updateProfile}
                     disabled={isSaving}
-                    className="px-6 py-2.5 bg-[var(--primary)] text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                    className="px-6 py-2.5 bg-[var(--primary)] text-white cursor-pointer rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                   >
                     {isSaving ? 'Enregistrement...' : 'Enregistrer les modifications'}
                   </button>
@@ -359,7 +359,7 @@ export default function SettingsPage() {
                       <button
                         type="button"
                         onClick={() => setShowNewPassword(!showNewPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 cursor-pointer hover:text-gray-700"
                       >
                         {showNewPassword ? (
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -391,7 +391,7 @@ export default function SettingsPage() {
                       <button
                         type="button"
                         onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 cursor-pointer hover:text-gray-700"
                       >
                         {showConfirmPassword ? (
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -423,7 +423,7 @@ export default function SettingsPage() {
                   <button
                     onClick={changePassword}
                     disabled={isSaving || !passwordData.newPassword || !passwordData.confirmPassword}
-                    className="px-6 py-2.5 bg-[var(--primary)] text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                    className="px-6 py-2.5 bg-[var(--primary)] text-white rounded-lg cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                   >
                     {isSaving ? 'Modification...' : 'Changer le mot de passe'}
                   </button>
@@ -480,7 +480,7 @@ export default function SettingsPage() {
 
                 <div className="flex justify-end pt-4">
                   <button
-                    className="px-6 py-2.5 bg-[var(--primary)] text-white rounded-lg hover:opacity-90 transition-opacity font-medium"
+                    className="px-6 py-2.5 bg-[var(--primary)] text-white cursor-pointer rounded-lg hover:opacity-90 transition-opacity font-medium"
                   >
                     Enregistrer les préférences
                   </button>

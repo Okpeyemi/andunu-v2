@@ -89,3 +89,53 @@ export interface Commande {
   created_at: string;
   updated_at: string;
 }
+
+// Types pour les rapports
+export type TypeRapport = 'daily' | 'weekly' | 'monthly' | 'custom';
+
+export interface RepasPopulaire {
+  nom: string;
+  quantite: number;
+  revenus: number;
+}
+
+export interface Rapport {
+  id: string;
+  titre: string;
+  type: TypeRapport;
+  periode_debut: string;
+  periode_fin: string;
+  total_commandes: number;
+  total_revenus: number;
+  total_clients: number;
+  nouveaux_clients: number;
+  commandes_en_attente: number;
+  commandes_confirmees: number;
+  commandes_en_preparation: number;
+  commandes_en_livraison: number;
+  commandes_livrees: number;
+  commandes_annulees: number;
+  paiements_reussis: number;
+  paiements_en_attente: number;
+  paiements_echoues: number;
+  repas_populaires?: RepasPopulaire[];
+  genere_par?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StatistiquesTempsReel {
+  total_commandes: number;
+  total_revenus: number;
+  total_clients: number;
+  nouveaux_clients_30j: number;
+  commandes_en_attente: number;
+  commandes_confirmees: number;
+  commandes_en_preparation: number;
+  commandes_en_livraison: number;
+  commandes_livrees: number;
+  commandes_annulees: number;
+  paiements_reussis: number;
+  paiements_en_attente: number;
+  paiements_echoues: number;
+}
