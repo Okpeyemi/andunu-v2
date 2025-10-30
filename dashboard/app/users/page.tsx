@@ -159,12 +159,33 @@ export default function UsersPage() {
     try {
       setIsUpdating(true);
       
+      // Récupérer l'utilisateur avant modification
+      const userToUpdate = users.find(u => u.id === userId);
+      
       const { error } = await supabase
         .from('profiles')
         .update({ status: newStatus })
         .eq('id', userId);
 
       if (error) throw error;
+
+      // Enregistrer le log de modification
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session && userToUpdate) {
+        await supabase.rpc('create_log', {
+          p_user_id: session.user.id,
+          p_action: 'update',
+          p_entity_type: 'user',
+          p_entity_id: userId,
+          p_description: `Changement de statut de ${userToUpdate.full_name}: ${userToUpdate.status} → ${newStatus}`,
+          p_metadata: {
+            user_email: userToUpdate.email,
+            old_status: userToUpdate.status,
+            new_status: newStatus
+          },
+          p_status: 'success'
+        });
+      }
 
       // Mettre à jour localement
       setUsers(users.map(user =>
@@ -239,6 +260,24 @@ export default function UsersPage() {
 
       // Attendre un peu pour que le profil soit créé par le trigger
       await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Enregistrer le log de création
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await supabase.rpc('create_log', {
+          p_user_id: session.user.id,
+          p_action: 'create',
+          p_entity_type: 'user',
+          p_entity_id: authData.user.id,
+          p_description: `Création d'un nouvel administrateur: ${newAdmin.full_name}`,
+          p_metadata: {
+            email: newAdmin.email,
+            phone: newAdmin.phone,
+            role: 'super_admin'
+          },
+          p_status: 'success'
+        });
+      }
 
       // Recharger la liste des utilisateurs
       await fetchUsers();

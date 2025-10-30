@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import Spinner from '@/components/Spinner';
+import NotificationModal from '@/components/NotificationModal';
 import { supabase, type Repas, type Accompagnement } from '@/lib/supabase';
 
 export default function MealsPage() {
@@ -32,6 +33,30 @@ export default function MealsPage() {
   });
 
   const [isSaving, setIsSaving] = useState(false);
+
+  // Notification
+  const [notification, setNotification] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: ''
+  });
+
+  // Modal de confirmation de suppression
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    isOpen: boolean;
+    id: string;
+    type: 'repas' | 'accompagnements';
+  }>({
+    isOpen: false,
+    id: '',
+    type: 'repas'
+  });
 
   useEffect(() => {
     fetchData();
@@ -78,12 +103,22 @@ export default function MealsPage() {
 
   const handleAddRepas = async () => {
     if (!repasForm.nom || !repasForm.prix) {
-      alert('Veuillez remplir tous les champs obligatoires');
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: 'Champs manquants',
+        message: 'Veuillez remplir tous les champs obligatoires'
+      });
       return;
     }
 
     if (repasForm.accompagnements_disponibles.length === 0) {
-      alert('Veuillez sélectionner au moins un accompagnement');
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: 'Accompagnement requis',
+        message: 'Veuillez sélectionner au moins un accompagnement'
+      });
       return;
     }
 
@@ -102,7 +137,12 @@ export default function MealsPage() {
 
       if (insertError) {
         console.error('Erreur:', insertError);
-        alert('Erreur lors de l\'ajout du repas');
+        setNotification({
+          isOpen: true,
+          type: 'error',
+          title: 'Erreur',
+          message: 'Erreur lors de l\'ajout du repas'
+        });
         return;
       }
 
@@ -118,9 +158,39 @@ export default function MealsPage() {
 
       setShowAddModal(false);
       fetchData();
+      
+      // Enregistrer le log de création
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await supabase.rpc('create_log', {
+          p_user_id: session.user.id,
+          p_action: 'create',
+          p_entity_type: 'meal',
+          p_entity_id: null,
+          p_description: `Création d'un nouveau repas: ${repasForm.nom}`,
+          p_metadata: {
+            nom: repasForm.nom,
+            prix: parseFloat(repasForm.prix),
+            accompagnements: repasForm.accompagnements_disponibles
+          },
+          p_status: 'success'
+        });
+      }
+      
+      setNotification({
+        isOpen: true,
+        type: 'success',
+        title: 'Succès',
+        message: 'Repas ajouté avec succès'
+      });
     } catch (err) {
       console.error('Erreur:', err);
-      alert('Une erreur est survenue');
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: 'Erreur',
+        message: 'Une erreur est survenue'
+      });
     } finally {
       setIsSaving(false);
     }
@@ -128,7 +198,12 @@ export default function MealsPage() {
 
   const handleAddAccompagnement = async () => {
     if (!accompagnementForm.nom) {
-      alert('Veuillez entrer un nom');
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: 'Champ manquant',
+        message: 'Veuillez entrer un nom'
+      });
       return;
     }
 
@@ -144,7 +219,12 @@ export default function MealsPage() {
 
       if (insertError) {
         console.error('Erreur:', insertError);
-        alert('Erreur lors de l\'ajout de l\'accompagnement');
+        setNotification({
+          isOpen: true,
+          type: 'error',
+          title: 'Erreur',
+          message: 'Erreur lors de l\'ajout de l\'accompagnement'
+        });
         return;
       }
 
@@ -157,9 +237,38 @@ export default function MealsPage() {
 
       setShowAddModal(false);
       fetchData();
+      
+      // Enregistrer le log de création
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await supabase.rpc('create_log', {
+          p_user_id: session.user.id,
+          p_action: 'create',
+          p_entity_type: 'accompaniment',
+          p_entity_id: null,
+          p_description: `Création d'un nouvel accompagnement: ${accompagnementForm.nom}`,
+          p_metadata: {
+            nom: accompagnementForm.nom,
+            description: accompagnementForm.description
+          },
+          p_status: 'success'
+        });
+      }
+      
+      setNotification({
+        isOpen: true,
+        type: 'success',
+        title: 'Succès',
+        message: 'Accompagnement ajouté avec succès'
+      });
     } catch (err) {
       console.error('Erreur:', err);
-      alert('Une erreur est survenue');
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: 'Erreur',
+        message: 'Une erreur est survenue'
+      });
     } finally {
       setIsSaving(false);
     }
@@ -174,21 +283,46 @@ export default function MealsPage() {
 
       if (updateError) {
         console.error('Erreur:', updateError);
-        alert('Erreur lors de la mise à jour');
+        setNotification({
+          isOpen: true,
+          type: 'error',
+          title: 'Erreur',
+          message: 'Erreur lors de la mise à jour'
+        });
         return;
       }
 
       fetchData();
+      setNotification({
+        isOpen: true,
+        type: 'success',
+        title: 'Succès',
+        message: 'Disponibilité mise à jour'
+      });
     } catch (err) {
       console.error('Erreur:', err);
-      alert('Une erreur est survenue');
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: 'Erreur',
+        message: 'Une erreur est survenue'
+      });
     }
   };
 
-  const handleDelete = async (id: string, type: 'repas' | 'accompagnements') => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cet élément ?')) {
-      return;
-    }
+  const openDeleteConfirm = (id: string, type: 'repas' | 'accompagnements') => {
+    setDeleteConfirm({ isOpen: true, id, type });
+  };
+
+  const handleDelete = async () => {
+    const { id, type } = deleteConfirm;
+    
+    // Récupérer l'élément avant suppression pour le log
+    const itemToDelete = type === 'repas' 
+      ? repas.find(r => r.id === id)
+      : accompagnements.find(a => a.id === id);
+    
+    setDeleteConfirm({ isOpen: false, id: '', type: 'repas' });
 
     try {
       const { error: deleteError } = await supabase
@@ -198,14 +332,47 @@ export default function MealsPage() {
 
       if (deleteError) {
         console.error('Erreur:', deleteError);
-        alert('Erreur lors de la suppression');
+        setNotification({
+          isOpen: true,
+          type: 'error',
+          title: 'Erreur',
+          message: 'Erreur lors de la suppression'
+        });
         return;
       }
 
+      // Enregistrer le log de suppression
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session && itemToDelete) {
+        await supabase.rpc('create_log', {
+          p_user_id: session.user.id,
+          p_action: 'delete',
+          p_entity_type: type === 'repas' ? 'meal' : 'accompaniment',
+          p_entity_id: id,
+          p_description: `Suppression ${type === 'repas' ? 'du repas' : 'de l\'accompagnement'}: ${itemToDelete.nom}`,
+          p_metadata: {
+            nom: itemToDelete.nom,
+            type: type
+          },
+          p_status: 'success'
+        });
+      }
+
       fetchData();
+      setNotification({
+        isOpen: true,
+        type: 'success',
+        title: 'Succès',
+        message: 'Élément supprimé avec succès'
+      });
     } catch (err) {
       console.error('Erreur:', err);
-      alert('Une erreur est survenue');
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: 'Erreur',
+        message: 'Une erreur est survenue'
+      });
     }
   };
 
@@ -354,8 +521,8 @@ export default function MealsPage() {
                             </td>
                             <td className="px-4 py-3">
                               <button
-                                onClick={() => handleDelete(item.id, 'repas')}
-                                className="text-red-600 hover:text-red-800 text-sm font-medium"
+                                onClick={() => openDeleteConfirm(item.id, 'repas')}
+                                className="text-red-600 hover:text-red-800 text-sm font-medium cursor-pointer"
                               >
                                 Supprimer
                               </button>
@@ -414,8 +581,8 @@ export default function MealsPage() {
                             </td>
                             <td className="px-4 py-3">
                               <button
-                                onClick={() => handleDelete(item.id, 'accompagnements')}
-                                className="text-red-600 hover:text-red-800 text-sm font-medium"
+                                onClick={() => openDeleteConfirm(item.id, 'accompagnements')}
+                                className="text-red-600 hover:text-red-800 text-sm font-medium cursor-pointer"
                               >
                                 Supprimer
                               </button>
@@ -637,6 +804,43 @@ export default function MealsPage() {
             </div>
           </div>
         )}
+
+        {/* Modal de confirmation de suppression */}
+        {deleteConfirm.isOpen && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl max-w-md w-full p-6">
+              <h3 className="text-xl font-bold text-foreground mb-4">
+                Confirmer la suppression
+              </h3>
+              <p className="text-gray-600 mb-6">
+                Êtes-vous sûr de vouloir supprimer cet élément ? Cette action est irréversible.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setDeleteConfirm({ isOpen: false, id: '', type: 'repas' })}
+                  className="flex-1 px-4 py-2 bg-gray-200 text-foreground rounded-lg hover:bg-gray-300 transition-all cursor-pointer"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-all cursor-pointer"
+                >
+                  Supprimer
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de notification */}
+        <NotificationModal
+          isOpen={notification.isOpen}
+          type={notification.type}
+          title={notification.title}
+          message={notification.message}
+          onClose={() => setNotification({ ...notification, isOpen: false })}
+        />
       </div>
     </DashboardLayout>
   );

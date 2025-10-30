@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface MenuItem {
   name: string;
@@ -13,6 +13,22 @@ export default function DashboardSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // Mettre à jour le padding du body quand la sidebar change
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const mainContent = document.querySelector('.dashboard-main-content');
+      if (mainContent) {
+        if (isCollapsed) {
+          mainContent.classList.remove('lg:pl-64');
+          mainContent.classList.add('lg:pl-20');
+        } else {
+          mainContent.classList.remove('lg:pl-20');
+          mainContent.classList.add('lg:pl-64');
+        }
+      }
+    }
+  }, [isCollapsed]);
 
   const menuItems: MenuItem[] = [
     {
@@ -61,6 +77,15 @@ export default function DashboardSidebar() {
       )
     },
     {
+      name: 'Logs',
+      href: '/logs',
+      icon: (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+      )
+    },
+    {
       name: 'Paramètres',
       href: '/settings',
       icon: (
@@ -83,7 +108,7 @@ export default function DashboardSidebar() {
     <>
       {/* Sidebar Desktop */}
       <aside
-        className={`hidden lg:flex flex-col bg-white border-r border-gray-200 transition-all duration-300 ${
+        className={`hidden lg:flex flex-col fixed left-0 top-0 h-screen bg-white border-r border-gray-200 transition-all duration-300 z-40 ${
           isCollapsed ? 'w-20' : 'w-64'
         }`}
       >
@@ -94,7 +119,7 @@ export default function DashboardSidebar() {
           )}
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            className="p-2 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
           >
             <svg
               className={`w-5 h-5 text-gray-600 transition-transform ${
@@ -120,7 +145,7 @@ export default function DashboardSidebar() {
             <button
               key={item.href}
               onClick={() => router.push(item.href)}
-              className={`${isCollapsed ? 'w-fit' : 'w-full'} flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
+              className={`${isCollapsed ? 'w-fit' : 'w-full'} flex items-center cursor-pointer gap-3 px-3 py-2.5 rounded-lg transition-all ${
                 isActive(item.href)
                   ? 'bg-orange-50 text-[var(--primary)] font-medium'
                   : 'text-gray-700 hover:bg-gray-50'
@@ -157,7 +182,7 @@ export default function DashboardSidebar() {
             <button
               key={item.href}
               onClick={() => router.push(item.href)}
-              className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-all ${
+              className={`flex flex-col items-center justify-center cursor-pointer gap-1 px-3 py-2 rounded-lg transition-all ${
                 isActive(item.href)
                   ? 'text-[var(--primary)]'
                   : 'text-gray-500'

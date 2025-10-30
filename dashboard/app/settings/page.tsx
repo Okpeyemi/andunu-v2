@@ -105,6 +105,21 @@ export default function SettingsPage() {
 
       if (error) throw error;
 
+      // Enregistrer le log de modification de profil
+      await supabase.rpc('create_log', {
+        p_user_id: session.user.id,
+        p_action: 'update',
+        p_entity_type: 'settings',
+        p_entity_id: session.user.id,
+        p_description: 'Modification des informations de profil',
+        p_metadata: {
+          full_name: profile.full_name,
+          phone: profile.phone,
+          address: profile.address
+        },
+        p_status: 'success'
+      });
+
       setNotification({
         isOpen: true,
         type: 'success',
@@ -152,6 +167,22 @@ export default function SettingsPage() {
       });
 
       if (error) throw error;
+
+      // Enregistrer le log de changement de mot de passe
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await supabase.rpc('create_log', {
+          p_user_id: session.user.id,
+          p_action: 'update',
+          p_entity_type: 'settings',
+          p_entity_id: session.user.id,
+          p_description: 'Changement de mot de passe',
+          p_metadata: {
+            action: 'password_change'
+          },
+          p_status: 'success'
+        });
+      }
 
       setPasswordData({
         currentPassword: '',

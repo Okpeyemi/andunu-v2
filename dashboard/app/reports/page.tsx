@@ -179,6 +179,21 @@ export default function ReportsPage() {
 
       if (error) throw error;
 
+      // Enregistrer le log de génération de rapport
+      await supabase.rpc('create_log', {
+        p_user_id: session.user.id,
+        p_action: 'create',
+        p_entity_type: 'report',
+        p_entity_id: data,
+        p_description: `Génération d'un rapport ${reportType}: ${debut} → ${fin}`,
+        p_metadata: {
+          type: reportType,
+          periode_debut: debut,
+          periode_fin: fin
+        },
+        p_status: 'success'
+      });
+
       setShowGenerateModal(false);
       await loadReports();
       
@@ -200,7 +215,7 @@ export default function ReportsPage() {
     }
   };
 
-  const exportToJSON = (rapport: Rapport) => {
+  const exportToJSON = async (rapport: Rapport) => {
     const data = {
       titre: rapport.titre,
       periode: `${rapport.periode_debut} - ${rapport.periode_fin}`,
@@ -232,9 +247,27 @@ export default function ReportsPage() {
     a.download = `rapport-${rapport.type}-${rapport.periode_debut}.json`;
     a.click();
     URL.revokeObjectURL(url);
+    
+    // Enregistrer le log d'export
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      await supabase.rpc('create_log', {
+        p_user_id: session.user.id,
+        p_action: 'export',
+        p_entity_type: 'report',
+        p_entity_id: rapport.id,
+        p_description: `Export JSON du rapport: ${rapport.titre}`,
+        p_metadata: {
+          format: 'JSON',
+          rapport_type: rapport.type,
+          periode: `${rapport.periode_debut} - ${rapport.periode_fin}`
+        },
+        p_status: 'success'
+      });
+    }
   };
 
-  const exportToCSV = (rapport: Rapport) => {
+  const exportToCSV = async (rapport: Rapport) => {
     // Créer les lignes CSV
     const csvLines = [
       ['Rapport', rapport.titre],
@@ -271,9 +304,27 @@ export default function ReportsPage() {
     a.download = `rapport-${rapport.type}-${rapport.periode_debut}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+    
+    // Enregistrer le log d'export
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      await supabase.rpc('create_log', {
+        p_user_id: session.user.id,
+        p_action: 'export',
+        p_entity_type: 'report',
+        p_entity_id: rapport.id,
+        p_description: `Export CSV du rapport: ${rapport.titre}`,
+        p_metadata: {
+          format: 'CSV',
+          rapport_type: rapport.type,
+          periode: `${rapport.periode_debut} - ${rapport.periode_fin}`
+        },
+        p_status: 'success'
+      });
+    }
   };
 
-  const exportToPDF = (rapport: Rapport) => {
+  const exportToPDF = async (rapport: Rapport) => {
     // Créer le contenu HTML pour le PDF
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
@@ -488,6 +539,24 @@ export default function ReportsPage() {
 
     printWindow.document.write(htmlContent);
     printWindow.document.close();
+    
+    // Enregistrer le log d'export
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      await supabase.rpc('create_log', {
+        p_user_id: session.user.id,
+        p_action: 'export',
+        p_entity_type: 'report',
+        p_entity_id: rapport.id,
+        p_description: `Export PDF du rapport: ${rapport.titre}`,
+        p_metadata: {
+          format: 'PDF',
+          rapport_type: rapport.type,
+          periode: `${rapport.periode_debut} - ${rapport.periode_fin}`
+        },
+        p_status: 'success'
+      });
+    }
   };
 
   if (isLoading) {
@@ -596,12 +665,14 @@ export default function ReportsPage() {
             </div>
 
             {/* Statuts des paiements */}
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-              <h3 className="text-lg font-semibold text-foreground mb-4">Statuts des paiements</h3>
-              <div className="space-y-3">
-                <StatBar label="Réussis" value={stats.paiements_reussis} total={stats.total_commandes} color="bg-green-500" />
-                <StatBar label="En attente" value={stats.paiements_en_attente} total={stats.total_commandes} color="bg-yellow-500" />
-                <StatBar label="Échoués" value={stats.paiements_echoues} total={stats.total_commandes} color="bg-red-500" />
+            <div className="bg-white rounded-xl p-6 flex flex-col justify-between shadow-sm border border-gray-200">
+              <div>
+                <h3 className="text-lg font-semibold text-foreground mb-4">Statuts des paiements</h3>
+                <div className="space-y-3">
+                  <StatBar label="Réussis" value={stats.paiements_reussis} total={stats.total_commandes} color="bg-green-500" />
+                  <StatBar label="En attente" value={stats.paiements_en_attente} total={stats.total_commandes} color="bg-yellow-500" />
+                  <StatBar label="Échoués" value={stats.paiements_echoues} total={stats.total_commandes} color="bg-red-500" />
+                </div>
               </div>
               <div className="mt-6 pt-6 border-t border-gray-200">
                 <div className="flex justify-between items-center">

@@ -42,12 +42,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-gray-50">
       {/* Sidebar */}
       <DashboardSidebar />
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      {/* Main Content - avec padding pour la sidebar fixe */}
+      <div className="dashboard-main-content lg:pl-64 flex flex-col min-h-screen transition-all duration-300">
         {/* Header */}
         <DashboardHeader />
 

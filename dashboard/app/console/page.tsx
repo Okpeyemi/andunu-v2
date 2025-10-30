@@ -89,6 +89,21 @@ export default function ConsolePage() {
         .update({ last_login_at: new Date().toISOString() })
         .eq('id', authData.user.id);
 
+      // Enregistrer le log de connexion
+      await supabase.rpc('create_log', {
+        p_user_id: authData.user.id,
+        p_action: 'login',
+        p_entity_type: 'auth',
+        p_entity_id: authData.user.id,
+        p_description: `Connexion réussie de ${profile.full_name}`,
+        p_metadata: {
+          email: email,
+          role: profile.role,
+          ip: typeof window !== 'undefined' ? window.location.hostname : null
+        },
+        p_status: 'success'
+      });
+
       // Sauvegarder les informations dans sessionStorage
       sessionStorage.setItem('isAdmin', 'true');
       sessionStorage.setItem('adminEmail', email);

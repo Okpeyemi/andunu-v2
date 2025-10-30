@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { supabase, type Commande, type StatutCommande } from '@/lib/supabase';
 import DashboardLayout from '@/components/DashboardLayout';
 import Spinner from '@/components/Spinner';
+import NotificationModal from '@/components/NotificationModal';
 
 export default function OrdersPage() {
   const [commandes, setCommandes] = useState<Commande[]>([]);
@@ -14,6 +15,19 @@ export default function OrdersPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedCommande, setSelectedCommande] = useState<Commande | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
+
+  // Notification
+  const [notification, setNotification] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'success',
+    title: '',
+    message: ''
+  });
 
   useEffect(() => {
     fetchCommandes();
@@ -63,12 +77,24 @@ export default function OrdersPage() {
       filtered = filtered.filter(cmd => cmd.statut === statusFilter);
     }
 
-    setFilteredCommandes(filtered);
   };
 
   const handleUpdateStatus = async (commandeId: string, newStatus: StatutCommande) => {
     setIsUpdating(true);
     try {
+      // Récupérer la commande avant modification
+      const commandeToUpdate = commandes.find(c => c.id === commandeId);
+      
+      if (!commandeToUpdate) {
+        setNotification({
+          isOpen: true,
+          type: 'error',
+          title: 'Erreur',
+          message: `La commande ${commandeId.slice(0, 8)} n'existe pas`
+        });
+        return;
+      }
+
       const { error: updateError } = await supabase
         .from('commandes')
         .update({ statut: newStatus })
@@ -76,8 +102,33 @@ export default function OrdersPage() {
 
       if (updateError) {
         console.error('Erreur:', updateError);
-        alert('Erreur lors de la mise à jour du statut');
+        setNotification({
+          isOpen: true,
+          type: 'error',
+          title: 'Erreur',
+          message: 'Erreur lors de la mise à jour du statut'
+        });
         return;
+      }
+
+      // Enregistrer le log de modification
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session && commandeToUpdate) {
+        await supabase.rpc('create_log', {
+          p_user_id: session.user.id,
+          p_action: 'update',
+          p_entity_type: 'order',
+          p_entity_id: commandeId,
+          p_description: `Changement de statut de commande ${commandeId.slice(0, 8)}: ${commandeToUpdate.statut} → ${newStatus}`,
+          p_metadata: {
+            client_nom: commandeToUpdate.client_nom,
+            client_telephone: commandeToUpdate.client_telephone,
+            old_status: commandeToUpdate.statut,
+            new_status: newStatus,
+            montant: commandeToUpdate.montant_total
+          },
+          p_status: 'success'
+        });
       }
 
       // Mettre à jour localement
@@ -87,12 +138,23 @@ export default function OrdersPage() {
         )
       );
 
-      if (selectedCommande?.id === commandeId) {
+      if (selectedCommande && selectedCommande.id === commandeId) {
         setSelectedCommande({ ...selectedCommande, statut: newStatus });
       }
+      setNotification({
+        isOpen: true,
+        type: 'success',
+        title: 'Succès',
+        message: 'Statut mis à jour avec succès'
+      });
     } catch (err) {
       console.error('Erreur:', err);
-      alert('Une erreur est survenue');
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: 'Erreur',
+        message: 'Une erreur est survenue'
+      });
     } finally {
       setIsUpdating(false);
     }
@@ -443,6 +505,15 @@ export default function OrdersPage() {
             </div>
           </div>
         )}
+
+        {/* Modal de notification */}
+        <NotificationModal
+          isOpen={notification.isOpen}
+          type={notification.type}
+          title={notification.title}
+          message={notification.message}
+          onClose={() => setNotification({ ...notification, isOpen: false })}
+        />
       </div>
     </DashboardLayout>
   );

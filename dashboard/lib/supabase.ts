@@ -139,3 +139,25 @@ export interface StatistiquesTempsReel {
   paiements_en_attente: number;
   paiements_echoues: number;
 }
+
+// Types pour les logs
+export type LogAction = 'create' | 'update' | 'delete' | 'login' | 'logout' | 'export' | 'import' | 'view';
+export type LogEntityType = 'user' | 'order' | 'meal' | 'accompaniment' | 'report' | 'settings' | 'auth';
+export type LogStatus = 'success' | 'error' | 'warning';
+
+export interface Log {
+  id: string;
+  user_id?: string;
+  user_email?: string;
+  user_name?: string;
+  action: LogAction;
+  entity_type: LogEntityType;
+  entity_id?: string;
+  description: string;
+  metadata?: Record<string, any>;
+  ip_address?: string;
+  user_agent?: string;
+  status: LogStatus;
+  error_message?: string;
+  created_at: string;
+}
