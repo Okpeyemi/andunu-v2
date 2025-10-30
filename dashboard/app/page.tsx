@@ -184,7 +184,9 @@ export default function AdminDashboard() {
         <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm mb-8">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Actions rapides</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <button className="flex items-center gap-3 p-4 border-2 border-gray-200 rounded-xl hover:border-[var(--primary)] hover:bg-orange-50 transition-all">
+            <button 
+              onClick={() => router.push('/orders')}
+              className="flex items-center gap-3 p-4 cursor-pointer border-2 border-gray-200 rounded-xl hover:border-[var(--primary)] hover:bg-orange-50 transition-all">
               <div className="w-10 h-10 bg-[var(--primary)] rounded-lg flex items-center justify-center">
                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -193,7 +195,9 @@ export default function AdminDashboard() {
               <span className="font-medium text-gray-700">Nouvelle commande</span>
             </button>
 
-            <button className="flex items-center gap-3 p-4 border-2 border-gray-200 rounded-xl hover:border-[var(--primary)] hover:bg-orange-50 transition-all">
+            <button 
+              onClick={() => router.push('/meals')}
+              className="flex items-center gap-3 p-4 cursor-pointer border-2 border-gray-200 rounded-xl hover:border-[var(--primary)] hover:bg-orange-50 transition-all">
               <div className="w-10 h-10 bg-[var(--primary)] rounded-lg flex items-center justify-center">
                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -202,7 +206,9 @@ export default function AdminDashboard() {
               <span className="font-medium text-gray-700">Ajouter un plat</span>
             </button>
 
-            <button className="flex items-center gap-3 p-4 border-2 border-gray-200 rounded-xl hover:border-[var(--primary)] hover:bg-orange-50 transition-all">
+            <button 
+              onClick={() => router.push('/reports')}
+              className="flex items-center gap-3 p-4 cursor-pointer border-2 border-gray-200 rounded-xl hover:border-[var(--primary)] hover:bg-orange-50 transition-all">
               <div className="w-10 h-10 bg-[var(--primary)] rounded-lg flex items-center justify-center">
                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -213,7 +219,7 @@ export default function AdminDashboard() {
 
             <button 
               onClick={() => router.push('/users')}
-              className="flex items-center gap-3 p-4 border-2 border-gray-200 rounded-xl hover:border-[var(--primary)] hover:bg-orange-50 transition-all"
+              className="flex items-center gap-3 p-4 cursor-pointer border-2 border-gray-200 rounded-xl hover:border-[var(--primary)] hover:bg-orange-50 transition-all"
             >
               <div className="w-10 h-10 bg-[var(--primary)] rounded-lg flex items-center justify-center">
                 <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -231,7 +237,7 @@ export default function AdminDashboard() {
             <h2 className="text-lg font-semibold text-gray-900">Commandes récentes</h2>
             <button
               onClick={() => router.push('/orders')}
-              className="text-sm text-[var(--primary)] hover:underline font-medium"
+              className="text-sm text-[var(--primary)] cursor-pointer hover:underline font-medium"
             >
               Voir tout
             </button>

@@ -216,6 +216,7 @@ export default function UsersPage() {
       }
 
       // Créer l'utilisateur avec Supabase Auth
+      // Note: Pour éviter le rate limit, désactivez "Enable email confirmations" dans Supabase Dashboard
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: newAdmin.email,
         password: newAdmin.password,
@@ -225,7 +226,8 @@ export default function UsersPage() {
             phone: newAdmin.phone,
             role: 'super_admin'
           },
-          emailRedirectTo: undefined
+          emailRedirectTo: undefined,
+          // Pas besoin d'email de confirmation pour les admins créés depuis le dashboard
         }
       });
 
@@ -327,7 +329,7 @@ export default function UsersPage() {
             </div>
             <button
               onClick={() => setIsCreateModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-[var(--primary)] text-white rounded-lg hover:opacity-90 transition-opacity font-medium"
+              className="flex items-center gap-2 px-4 py-2.5 bg-[var(--primary)] cursor-pointer text-white rounded-lg hover:opacity-90 transition-opacity font-medium"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -474,7 +476,7 @@ export default function UsersPage() {
                             setSelectedUser(user);
                             setIsModalOpen(true);
                           }}
-                          className="text-[var(--primary)] hover:text-[var(--primary)]/80 transition-colors"
+                          className="text-[var(--primary)] hover:text-[var(--primary)]/80 cursor-pointer transition-colors"
                         >
                           Gérer
                         </button>
@@ -527,14 +529,14 @@ export default function UsersPage() {
                   <button
                     onClick={() => updateUserStatus(selectedUser.id, 'inactive')}
                     disabled={isUpdating}
-                    className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-2 bg-gray-100 text-gray-700 cursor-pointer rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isUpdating ? 'Traitement...' : 'Désactiver le compte'}
                   </button>
                   <button
                     onClick={() => updateUserStatus(selectedUser.id, 'suspended')}
                     disabled={isUpdating}
-                    className="w-full px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-4 py-2 bg-red-100 text-red-700 cursor-pointer rounded-lg hover:bg-red-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isUpdating ? 'Traitement...' : 'Suspendre le compte'}
                   </button>
@@ -545,7 +547,7 @@ export default function UsersPage() {
                 <button
                   onClick={() => updateUserStatus(selectedUser.id, 'active')}
                   disabled={isUpdating}
-                  className="w-full px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full px-4 py-2 bg-green-100 text-green-700 cursor-pointer rounded-lg hover:bg-green-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isUpdating ? 'Traitement...' : 'Activer le compte'}
                 </button>
@@ -555,7 +557,7 @@ export default function UsersPage() {
                 <button
                   onClick={() => updateUserStatus(selectedUser.id, 'active')}
                   disabled={isUpdating}
-                  className="w-full px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full px-4 py-2 bg-green-100 text-green-700 cursor-pointer rounded-lg hover:bg-green-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isUpdating ? 'Traitement...' : 'Réactiver le compte'}
                 </button>
@@ -566,7 +568,7 @@ export default function UsersPage() {
                   setIsModalOpen(false);
                   setSelectedUser(null);
                 }}
-                className="w-full px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                className="w-full px-4 py-2 bg-white border border-gray-300 cursor-pointer text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 Fermer
               </button>
@@ -645,7 +647,7 @@ export default function UsersPage() {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-gray-500 hover:text-gray-700 transition-colors"
                   >
                     {showPassword ? (
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -676,7 +678,7 @@ export default function UsersPage() {
               <button
                 onClick={createSuperAdmin}
                 disabled={isCreating}
-                className="w-full px-4 py-2.5 bg-[var(--primary)] text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                className="w-full px-4 py-2.5 bg-[var(--primary)] cursor-pointer text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed font-medium"
               >
                 {isCreating ? 'Création en cours...' : 'Créer l\'administrateur'}
               </button>
@@ -694,7 +696,7 @@ export default function UsersPage() {
                   });
                 }}
                 disabled={isCreating}
-                className="w-full px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full px-4 py-2 bg-white border border-gray-300 cursor-pointer text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Annuler
               </button>
