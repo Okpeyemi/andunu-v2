@@ -6,7 +6,7 @@ import { supabase, type CreateCommandeInput } from '@/lib/supabase';
 
 interface MealDetails {
   mainDish: string;
-  ingredients: string[];
+  price: number;
 }
 
 interface Step7PaymentProps {
@@ -28,24 +28,21 @@ export default function Step7Payment({
   onSubmit,
   onPrev,
 }: Step7PaymentProps) {
-  const [selectedOption, setSelectedOption] = useState<'daily' | 'weekly' | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const numberOfDays = selectedDays.length;
-  const pricePerDay = 2000; // Prix exemple en FCFA
-  const dailyTotal = pricePerDay;
-  const weeklyTotal = pricePerDay * numberOfDays;
-  const weeklyDiscount = Math.round(weeklyTotal * 0.1); // 10% de réduction
-  const weeklyFinal = weeklyTotal - weeklyDiscount;
+  
+  // Calculer le total basé sur les prix réels des plats
+  const totalAmount = selectedDays.reduce((sum, day) => {
+    return sum + (meals[day]?.price || 0);
+  }, 0);
 
   const handleSubmit = async () => {
-    if (!selectedOption) return;
-
     setIsSubmitting(true);
 
     try {
-      // Calculer le montant total
-      const totalAmount = selectedOption === 'daily' ? dailyTotal : weeklyFinal;
+      // Utiliser le montant total directement
+      const paymentAmount = totalAmount;
 
       // Préparer les données du client
       const [firstName, ...lastNameParts] = userInfo.fullName.split(' ');
@@ -59,8 +56,8 @@ export default function Step7Payment({
         heure_livraison: deliveryTime,
         jours_selectionnes: selectedDays,
         repas: meals,
-        mode_paiement: selectedOption,
-        montant_total: totalAmount,
+        mode_paiement: 'daily',
+        montant_total: paymentAmount,
       };
 
       const { data: commande, error: commandeError } = await supabase
@@ -94,8 +91,8 @@ export default function Step7Payment({
         location,
         deliveryTime,
         userInfo,
-        paymentOption: selectedOption,
-        amount: totalAmount,
+        paymentOption: 'daily',
+        amount: paymentAmount,
         commandeId: commande.id,
       };
       localStorage.setItem('orderData', JSON.stringify(orderData));
@@ -107,7 +104,7 @@ export default function Step7Payment({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          amount: totalAmount,
+          amount: paymentAmount,
           description: `Commande Andunu #${commande.id.slice(0, 8)} - ${numberOfDays} jour(s)`,
           customer: {
             firstname: firstName,
@@ -120,7 +117,7 @@ export default function Step7Payment({
             meals: JSON.stringify(meals),
             location,
             deliveryTime,
-            paymentOption: selectedOption,
+            paymentOption: 'daily',
           },
         }),
       });
@@ -206,123 +203,39 @@ export default function Step7Payment({
               <div key={day} className="text-gray-700">
                 <div className="flex justify-between items-center">
                   <span className="font-medium">{day} :</span>
-                  <span className="text-[var(--primary)]">{meals[day]?.mainDish}</span>
-                </div>
-                {meals[day]?.ingredients && meals[day].ingredients.length > 0 && (
-                  <div className="text-sm text-gray-500 ml-4 mt-1">
-                    Avec : {meals[day].ingredients.join(', ')}
+                  <div className="text-right">
+                    <span className="text-[var(--primary)]">{meals[day]?.mainDish}</span>
+                    <span className="text-sm text-gray-500 ml-2">
+                      ({meals[day]?.price?.toLocaleString()} FCFA)
+                    </span>
                   </div>
-                )}
+                </div>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Mode de paiement */}
+      {/* Montant total */}
       <h3 className="text-xl font-semibold text-foreground mb-4">
-        Choisis ton mode de paiement
+        Effectue ton paiement
       </h3>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-3xl mb-8">
-        {/* Option paiement par jour */}
-        <button
-          onClick={() => setSelectedOption('daily')}
-          className={`p-6 rounded-2xl border-2 transition-all text-left ${
-            selectedOption === 'daily'
-              ? 'border-[var(--primary)] bg-[var(--primary)]/5 shadow-lg'
-              : 'border-gray-200 hover:border-gray-300'
-          }`}
-        >
-          <div className="flex items-start justify-between mb-4">
-            <h3 className="text-xl font-semibold text-foreground">
-              Paiement par jour
-            </h3>
-            <div
-              className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                selectedOption === 'daily'
-                  ? 'border-[var(--primary)] bg-[var(--primary)]'
-                  : 'border-gray-300'
-              }`}
-            >
-              {selectedOption === 'daily' && (
-                <svg
-                  className="w-4 h-4 text-white"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              )}
-            </div>
-          </div>
+      <div className="w-full max-w-3xl mb-8">
+        <div className="p-6 rounded-2xl border-2 border-[var(--primary)] bg-[var(--primary)]/5 shadow-lg">
+          <h3 className="text-xl font-semibold text-foreground mb-4">
+            Montant à payer
+          </h3>
           <p className="text-gray-600 mb-4">
-            Payez chaque jour individuellement
+            {numberOfDays === 1 
+              ? `Pour votre repas du ${selectedDays[0]}`
+              : `Pour vos ${numberOfDays} repas`
+            }
           </p>
           <div className="text-3xl font-bold text-[var(--primary)]">
-            {dailyTotal.toLocaleString()} FCFA
-            <span className="text-sm font-normal text-gray-600"> / jour</span>
+            {totalAmount.toLocaleString()} FCFA
           </div>
-        </button>
-
-        {/* Option paiement par semaine */}
-        <button
-          onClick={() => setSelectedOption('weekly')}
-          className={`p-6 rounded-2xl border-2 transition-all text-left relative ${
-            selectedOption === 'weekly'
-              ? 'border-[var(--primary)] bg-[var(--primary)]/5 shadow-lg'
-              : 'border-gray-200 hover:border-gray-300'
-          }`}
-        >
-          <div className="absolute -top-3 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
-            -10% 🎉
-          </div>
-          <div className="flex items-start justify-between mb-4">
-            <h3 className="text-xl font-semibold text-foreground">
-              Paiement hebdomadaire
-            </h3>
-            <div
-              className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                selectedOption === 'weekly'
-                  ? 'border-[var(--primary)] bg-[var(--primary)]'
-                  : 'border-gray-300'
-              }`}
-            >
-              {selectedOption === 'weekly' && (
-                <svg
-                  className="w-4 h-4 text-white"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              )}
-            </div>
-          </div>
-          <p className="text-gray-600 mb-4">
-            Payez pour {numberOfDays} jours et économisez
-          </p>
-          <div className="space-y-1">
-            <div className="text-sm text-gray-500 line-through">
-              {weeklyTotal.toLocaleString()} FCFA
-            </div>
-            <div className="text-3xl font-bold text-[var(--primary)]">
-              {weeklyFinal.toLocaleString()} FCFA
-              <span className="text-sm font-normal text-gray-600"> / semaine</span>
-            </div>
-            <div className="text-sm text-green-600 font-medium">
-              Économisez {weeklyDiscount.toLocaleString()} FCFA
-            </div>
-          </div>
-        </button>
+        </div>
       </div>
 
       <div className="flex gap-4">
@@ -334,15 +247,15 @@ export default function Step7Payment({
         </button>
         <button
           onClick={handleSubmit}
-          disabled={!selectedOption || isSubmitting}
+          disabled={isSubmitting}
           className={`px-8 py-3 rounded-2xl text-lg font-medium transition-all flex items-center gap-2 ${
-            selectedOption && !isSubmitting
+            !isSubmitting
               ? 'bg-[var(--primary)] text-white hover:opacity-90'
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`}
         >
           {isSubmitting && <Spinner size="sm" />}
-          Confirmer
+          Payer {totalAmount.toLocaleString()} FCFA
         </button>
       </div>
     </div>

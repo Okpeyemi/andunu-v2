@@ -4,10 +4,12 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Spinner from '@/components/Spinner';
 import { supabase, type Commande } from '@/lib/supabase';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 
 interface MealDetails {
   mainDish: string;
-  ingredients: string[];
+  price: number;
 }
 
 export default function SuiviCommandePage() {
@@ -18,7 +20,6 @@ export default function SuiviCommandePage() {
   const [error, setError] = useState('');
   const [isEditingMenu, setIsEditingMenu] = useState(false);
   const [editedMenu, setEditedMenu] = useState<Record<string, MealDetails>>({});
-  const [ingredientsText, setIngredientsText] = useState<Record<string, string>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
 
@@ -68,13 +69,6 @@ export default function SuiviCommandePage() {
 
       setCommande(foundCommande as Commande);
       setEditedMenu(foundCommande.repas);
-      
-      // Initialiser le texte des ingrédients
-      const ingredientsTextInit: Record<string, string> = {};
-      Object.keys(foundCommande.repas).forEach(jour => {
-        ingredientsTextInit[jour] = foundCommande.repas[jour]?.ingredients?.join(', ') || '';
-      });
-      setIngredientsText(ingredientsTextInit);
     } catch (err) {
       console.error('Erreur:', err);
       setError('Une erreur est survenue. Veuillez réessayer.');
@@ -103,16 +97,8 @@ export default function SuiviCommandePage() {
     setError('');
 
     try {
-      // Convertir le texte des ingrédients en tableau avant de sauvegarder
-      const finalMenu: Record<string, MealDetails> = {};
-      Object.keys(editedMenu).forEach(jour => {
-        finalMenu[jour] = {
-          mainDish: editedMenu[jour].mainDish,
-          ingredients: ingredientsText[jour]
-            ? ingredientsText[jour].split(',').map(i => i.trim()).filter(i => i)
-            : []
-        };
-      });
+      // Utiliser le menu édité directement
+      const finalMenu = editedMenu;
 
       const { error: updateError } = await supabase
         .from('commandes')
@@ -141,12 +127,12 @@ export default function SuiviCommandePage() {
     }
   };
 
-  const handleUpdateMeal = (jour: string, field: 'mainDish' | 'ingredients', value: string | string[]) => {
+  const handleUpdateMeal = (jour: string, field: 'mainDish' | 'price', value: string | number) => {
     setEditedMenu(prev => ({
       ...prev,
       [jour]: {
         ...prev[jour],
-        [field]: value
+        [field]: field === 'price' ? Number(value) : value
       }
     }));
   };
@@ -198,16 +184,10 @@ export default function SuiviCommandePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-6">
-      <div className="max-w-4xl mx-auto">
-      
-      {/* Logo en haut au centre */}
-      <div className="flex justify-center pt-8 pb-6">
-        <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold text-foreground">
-          andunu
-        </h1>
-      </div>
-
+    <>
+      <Header />
+      <div className="min-h-screen bg-gray-50 py-12 px-6">
+      <div className="max-w-4xl mx-auto mt-20">
         {/* En-tête */}
         <div className="text-center mb-8">
           <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-2">
@@ -367,13 +347,13 @@ export default function SuiviCommandePage() {
                           />
                         </div>
                         <div>
-                          <label className="block text-xs text-gray-600 mb-1">Accompagnements (séparés par des virgules)</label>
+                          <label className="block text-xs text-gray-600 mb-1">Prix (FCFA)</label>
                           <input
-                            type="text"
-                            value={ingredientsText[jour] || ''}
-                            onChange={(e) => setIngredientsText(prev => ({ ...prev, [jour]: e.target.value }))}
+                            type="number"
+                            value={editedMenu[jour]?.price || ''}
+                            onChange={(e) => handleUpdateMeal(jour, 'price', e.target.value)}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-[var(--primary)] focus:outline-none"
-                            placeholder="Ex: Poisson, Œuf, Banane"
+                            placeholder="Ex: 1500"
                           />
                         </div>
                       </div>
@@ -381,15 +361,15 @@ export default function SuiviCommandePage() {
                       <>
                         <div className="flex justify-between items-center">
                           <span className="font-medium text-foreground">{jour}</span>
-                          <span className="text-[var(--primary)] font-medium">
-                            {commande.repas[jour]?.mainDish || 'Non défini'}
-                          </span>
-                        </div>
-                        {commande.repas[jour]?.ingredients && commande.repas[jour].ingredients.length > 0 && (
-                          <div className="text-sm text-gray-500 mt-1">
-                            Avec : {commande.repas[jour].ingredients.join(', ')}
+                          <div className="text-right">
+                            <span className="text-[var(--primary)] font-medium">
+                              {commande.repas[jour]?.mainDish || 'Non défini'}
+                            </span>
+                            <span className="text-sm text-gray-500 ml-2">
+                              ({commande.repas[jour]?.price?.toLocaleString()} FCFA)
+                            </span>
                           </div>
-                        )}
+                        </div>
                       </>
                     )}
                   </div>
@@ -469,5 +449,7 @@ export default function SuiviCommandePage() {
         )}
       </div>
     </div>
+      <Footer />
+    </>
   );
 }

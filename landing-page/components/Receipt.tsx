@@ -4,7 +4,7 @@ import { useRef } from 'react';
 
 interface MealDetails {
   mainDish: string;
-  ingredients: string[];
+  price: number;
 }
 
 interface ReceiptProps {
@@ -436,13 +436,13 @@ export default function Receipt({ transactionId, orderData }: ReceiptProps) {
               >
                 <div className="flex justify-between items-center">
                   <span className="font-medium text-foreground">{day}</span>
-                  <span className="text-[var(--primary)] font-medium">{orderData.meals[day]?.mainDish || 'Non défini'}</span>
-                </div>
-                {orderData.meals[day]?.ingredients && orderData.meals[day].ingredients.length > 0 && (
-                  <div className="text-sm text-gray-500 mt-1">
-                    Avec : {orderData.meals[day].ingredients.join(', ')}
+                  <div className="text-right">
+                    <span className="text-[var(--primary)] font-medium">{orderData.meals[day]?.mainDish || 'Non défini'}</span>
+                    <span className="text-sm text-gray-500 ml-2">
+                      ({orderData.meals[day]?.price?.toLocaleString()} FCFA)
+                    </span>
                   </div>
-                )}
+                </div>
               </div>
             ))}
           </div>

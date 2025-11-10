@@ -57,6 +57,14 @@ export default function Header() {
               Accueil
             </Link>
             <Link 
+              href="/suivi-commande" 
+              className={`text-sm font-medium transition-colors ${
+                pathname === '/suivre-commande' ? 'text-primary underline underline-offset-4 underline-2' : 'text-foreground hover:text-primary hover:underline hover:underline-offset-4 hover:underline-2'
+              }`}
+            >
+              Suivez votre commande
+            </Link>
+            <Link 
               href="/contact" 
               className={`text-sm font-medium transition-colors ${
                 pathname === '/contact' ? 'text-primary underline underline-offset-4 underline-2' : 'text-foreground hover:text-primary hover:underline hover:underline-offset-4 hover:underline-2'

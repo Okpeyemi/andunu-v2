@@ -32,7 +32,7 @@ export type ModePaiement = 'daily' | 'weekly';
 
 export interface MealDetails {
   mainDish: string;
-  ingredients: string[];
+  price: number;
 }
 
 export interface Commande {

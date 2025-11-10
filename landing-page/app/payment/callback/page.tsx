@@ -8,7 +8,7 @@ import { supabase } from '@/lib/supabase';
 
 interface MealDetails {
   mainDish: string;
-  ingredients: string[];
+  price: number;
 }
 
 interface OrderData {

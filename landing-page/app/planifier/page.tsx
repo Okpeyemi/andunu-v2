@@ -13,7 +13,7 @@ import DevPaymentInfo from '@/components/DevPaymentInfo';
 
 interface MealDetails {
   mainDish: string;
-  ingredients: string[];
+  price: number;
 }
 
 export default function PlanifierPage() {

@@ -2,11 +2,15 @@
 
 import { useState } from 'react';
 import Spinner from '@/components/Spinner';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 interface Step3LocationSelectionProps {
   onSubmit: (location: string) => void;
   onPrev: () => void;
 }
+
+// Liste des lieux disponibles
+const LOCATIONS = ['Epitech'];
 
 export default function Step3LocationSelection({
   onSubmit,
@@ -31,8 +35,12 @@ export default function Step3LocationSelection({
       </h2>
 
       <div className="w-full max-w-md mb-8">
-        <div className="relative">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+        <CustomSelect
+          options={LOCATIONS.map((loc) => ({ value: loc, label: loc }))}
+          value={location}
+          onChange={setLocation}
+          placeholder="Sélectionne ton lieu de livraison"
+          icon={
             <svg
               xmlns="http://www.w3.org/2000/svg"
               className="h-6 w-6"
@@ -53,15 +61,8 @@ export default function Step3LocationSelection({
                 d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
               />
             </svg>
-          </div>
-          <input
-            type="text"
-            value={location}
-            onChange={(e) => setLocation(e.target.value)}
-            placeholder="Entrez votre adresse de livraison"
-            className="w-full pl-14 pr-4 py-4 rounded-2xl border-2 border-gray-200 focus:border-[var(--primary)] focus:outline-none text-lg"
-          />
-        </div>
+          }
+        />
       </div>
 
       <div className="flex gap-4">
