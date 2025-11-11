@@ -19,29 +19,29 @@ interface MealWithPrices {
 }
 
 // Packs disponibles
-const PACKS = [1000, 1500, 2000];
+const PACKS = [100, 1500, 2000];
 
 // Liste de plats avec leurs prix
 const MEALS_WITH_PRICES: MealWithPrices[] = [
-  { name: 'Riz sauce poisson', prices: [1000, 1500] },
-  { name: 'Riz sauce banane', prices: [1000] },
-  { name: 'Riz sauce œuf', prices: [1000, 1500] },
+  { name: 'Riz sauce poisson', prices: [100, 1500] },
+  { name: 'Riz sauce banane', prices: [100] },
+  { name: 'Riz sauce œuf', prices: [100, 1500] },
   { name: 'Riz sauce viande', prices: [1500, 2000] },
   { name: 'Riz sauce poulet', prices: [1500, 2000] },
-  { name: 'Attiéké poisson frit', prices: [1000, 1500] },
+  { name: 'Attiéké poisson frit', prices: [100, 1500] },
   { name: 'Attiéké poisson braisé', prices: [1500, 2000] },
-  { name: 'Attiéké thon', prices: [1000, 1500] },
-  { name: 'Alloco poisson', prices: [1000, 1500] },
-  { name: 'Alloco œuf', prices: [1000] },
+  { name: 'Attiéké thon', prices: [100, 1500] },
+  { name: 'Alloco poisson', prices: [100, 1500] },
+  { name: 'Alloco œuf', prices: [100] },
   { name: 'Poulet braisé attiéké', prices: [1500, 2000] },
   { name: 'Poulet braisé riz', prices: [1500, 2000] },
   { name: 'Poulet braisé frites', prices: [2000] },
   { name: 'Poisson braisé attiéké', prices: [1500, 2000] },
   { name: 'Poisson braisé riz', prices: [1500, 2000] },
   { name: 'Foutou sauce graine', prices: [1500, 2000] },
-  { name: 'Foutou sauce claire', prices: [1000, 1500] },
+  { name: 'Foutou sauce claire', prices: [100, 1500] },
   { name: 'Placali sauce graine', prices: [1500, 2000] },
-  { name: 'Placali sauce claire', prices: [1000, 1500] },
+  { name: 'Placali sauce claire', prices: [100, 1500] },
   { name: 'Kedjenou riz', prices: [2000] },
   { name: 'Kedjenou attiéké', prices: [2000] },
 ];
