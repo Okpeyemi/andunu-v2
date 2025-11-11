@@ -19,7 +19,7 @@ interface MealWithPrices {
 }
 
 // Packs disponibles
-const PACKS = [100, 1500, 2000];
+const PACKS = [100, 1500, 2000]; 
 
 // Liste de plats avec leurs prix
 const MEALS_WITH_PRICES: MealWithPrices[] = [
