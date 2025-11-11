@@ -74,6 +74,8 @@ export default function MealsPage() {
         .select('*')
         .order('ordre', { ascending: true });
 
+        console.log(packsData)
+
       if (packsError) {
         console.error('Erreur packs:', packsError);
         setError('Erreur lors du chargement des packs');

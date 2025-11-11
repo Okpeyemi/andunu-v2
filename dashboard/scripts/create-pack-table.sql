@@ -39,10 +39,27 @@ ALTER TABLE repas ADD COLUMN IF NOT EXISTS pack_ids UUID[] DEFAULT '{}';
 -- Créer un index sur pack_ids
 CREATE INDEX IF NOT EXISTS idx_repas_pack_ids ON repas USING GIN(pack_ids);
 
--- Étape 6: Activer Row Level Security (RLS) sur la table pack
+-- Étape 6: Créer une fonction pour vérifier le rôle admin (évite la récursion RLS)
+CREATE OR REPLACE FUNCTION is_admin()
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 
+    FROM users
+    WHERE id = auth.uid()
+    AND role = 'admin'
+  );
+END;
+$$;
+
+-- Étape 7: Activer Row Level Security (RLS) sur la table pack
 ALTER TABLE pack ENABLE ROW LEVEL SECURITY;
 
--- Étape 7: Créer les policies RLS pour la table pack
+-- Étape 8: Créer les policies RLS pour la table pack
 
 -- Policy 1: Tout le monde peut lire les packs disponibles (pour l'affichage public)
 DROP POLICY IF EXISTS "Lecture publique des packs disponibles" ON pack;
@@ -57,13 +74,7 @@ CREATE POLICY "Admins peuvent tout lire"
   ON pack
   FOR SELECT
   TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM users
-      WHERE users.id = auth.uid()
-      AND users.role = 'admin'
-    )
-  );
+  USING (is_admin());
 
 -- Policy 3: Les administrateurs peuvent insérer
 DROP POLICY IF EXISTS "Admins peuvent insérer" ON pack;
@@ -71,13 +82,7 @@ CREATE POLICY "Admins peuvent insérer"
   ON pack
   FOR INSERT
   TO authenticated
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM users
-      WHERE users.id = auth.uid()
-      AND users.role = 'admin'
-    )
-  );
+  WITH CHECK (is_admin());
 
 -- Policy 4: Les administrateurs peuvent modifier
 DROP POLICY IF EXISTS "Admins peuvent modifier" ON pack;
@@ -85,20 +90,8 @@ CREATE POLICY "Admins peuvent modifier"
   ON pack
   FOR UPDATE
   TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM users
-      WHERE users.id = auth.uid()
-      AND users.role = 'admin'
-    )
-  )
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM users
-      WHERE users.id = auth.uid()
-      AND users.role = 'admin'
-    )
-  );
+  USING (is_admin())
+  WITH CHECK (is_admin());
 
 -- Policy 5: Les administrateurs peuvent supprimer
 DROP POLICY IF EXISTS "Admins peuvent supprimer" ON pack;
@@ -106,13 +99,7 @@ CREATE POLICY "Admins peuvent supprimer"
   ON pack
   FOR DELETE
   TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM users
-      WHERE users.id = auth.uid()
-      AND users.role = 'admin'
-    )
-  );
+  USING (is_admin());
 
 -- Vérification des policies
 SELECT schemaname, tablename, policyname, permissive, roles, cmd, qual, with_check
