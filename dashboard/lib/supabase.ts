@@ -25,42 +25,33 @@ export interface Profile {
   updated_at: string;
 }
 
-// Types pour les repas et accompagnements
-export interface Repas {
+// Types pour les packs de prix
+export interface Pack {
   id: string;
-  nom: string;
+  name: string;
+  price: number;
   description?: string;
-  prix: number;
-  image_url?: string;
-  accompagnements_disponibles: string[]; // Array de noms d'accompagnements
   disponible: boolean;
+  ordre: number;
   created_at: string;
   updated_at: string;
 }
 
-export interface Accompagnement {
+// Types pour les repas
+export interface Repas {
   id: string;
-  nom: string;
-  description?: string;
-  prix: number; // Prix additionnel
+  name: string;
+  prices: number[]; // Tableau de prix (ex: [1000, 1500])
+  pack_ids?: string[]; // IDs des packs sélectionnés
   disponible: boolean;
   created_at: string;
   updated_at: string;
 }
 
 export interface CreateRepasInput {
-  nom: string;
-  description?: string;
-  prix: number;
-  image_url?: string;
-  accompagnements_disponibles?: string[];
-  disponible?: boolean;
-}
-
-export interface CreateAccompagnementInput {
-  nom: string;
-  description?: string;
-  prix?: number;
+  name: string;
+  prices: number[];
+  pack_ids?: string[];
   disponible?: boolean;
 }
 
@@ -142,7 +133,7 @@ export interface StatistiquesTempsReel {
 
 // Types pour les logs
 export type LogAction = 'create' | 'update' | 'delete' | 'login' | 'logout' | 'export' | 'import' | 'view';
-export type LogEntityType = 'user' | 'order' | 'meal' | 'accompaniment' | 'report' | 'settings' | 'auth';
+export type LogEntityType = 'user' | 'order' | 'meal' | 'report' | 'settings' | 'auth';
 export type LogStatus = 'success' | 'error' | 'warning';
 
 export interface Log {

@@ -159,7 +159,6 @@ export default function LogsPage() {
       user: 'Utilisateur',
       order: 'Commande',
       meal: 'Repas',
-      accompaniment: 'Accompagnement',
       report: 'Rapport',
       settings: 'Paramètres',
       auth: 'Authentification',
@@ -285,7 +284,6 @@ export default function LogsPage() {
                   <option value="user">Utilisateur</option>
                   <option value="order">Commande</option>
                   <option value="meal">Repas</option>
-                  <option value="accompaniment">Accompagnement</option>
                   <option value="report">Rapport</option>
                   <option value="settings">Paramètres</option>
                   <option value="auth">Authentification</option>

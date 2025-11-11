@@ -4,31 +4,32 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import Spinner from '@/components/Spinner';
 import NotificationModal from '@/components/NotificationModal';
-import { supabase, type Repas, type Accompagnement } from '@/lib/supabase';
+import { supabase, type Repas, type Pack } from '@/lib/supabase';
 
 export default function MealsPage() {
-  const [activeTab, setActiveTab] = useState<'repas' | 'accompagnements'>('repas');
+  const [activeTab, setActiveTab] = useState<'repas' | 'packs'>('repas');
   const [repas, setRepas] = useState<Repas[]>([]);
-  const [accompagnements, setAccompagnements] = useState<Accompagnement[]>([]);
+  const [packs, setPacks] = useState<Pack[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
-  const [editingItem, setEditingItem] = useState<Repas | Accompagnement | null>(null);
+  const [editingItem, setEditingItem] = useState<Repas | null>(null);
+  const [editingPack, setEditingPack] = useState<Pack | null>(null);
+  const [showAddPackModal, setShowAddPackModal] = useState(false);
 
   // Formulaire repas
   const [repasForm, setRepasForm] = useState({
-    nom: '',
-    description: '',
-    prix: '',
-    image_url: '',
+    name: '',
+    selectedPackIds: [] as string[],
     disponible: true,
-    accompagnements_disponibles: [] as string[],
   });
 
-  // Formulaire accompagnement
-  const [accompagnementForm, setAccompagnementForm] = useState({
-    nom: '',
+  // Formulaire pack
+  const [packForm, setPackForm] = useState({
+    name: '',
+    price: '',
     description: '',
+    ordre: '',
     disponible: true,
   });
 
@@ -51,11 +52,11 @@ export default function MealsPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<{
     isOpen: boolean;
     id: string;
-    type: 'repas' | 'accompagnements';
+    type: 'repas' | 'pack';
   }>({
     isOpen: false,
     id: '',
-    type: 'repas'
+    type: 'repas',
   });
 
   useEffect(() => {
@@ -67,11 +68,25 @@ export default function MealsPage() {
       setIsLoading(true);
       setError('');
 
+      // Récupérer les packs (tous les packs pour les admins grâce aux RLS policies)
+      const { data: packsData, error: packsError } = await supabase
+        .from('pack')
+        .select('*')
+        .order('ordre', { ascending: true });
+
+      if (packsError) {
+        console.error('Erreur packs:', packsError);
+        setError('Erreur lors du chargement des packs');
+        return;
+      }
+
+      setPacks(packsData || []);
+
       // Récupérer les repas
       const { data: repasData, error: repasError } = await supabase
         .from('repas')
         .select('*')
-        .order('nom', { ascending: true });
+        .order('name', { ascending: true });
 
       if (repasError) {
         console.error('Erreur repas:', repasError);
@@ -79,20 +94,7 @@ export default function MealsPage() {
         return;
       }
 
-      // Récupérer les accompagnements
-      const { data: accompagnementsData, error: accompagnementsError } = await supabase
-        .from('accompagnements')
-        .select('*')
-        .order('nom', { ascending: true });
-
-      if (accompagnementsError) {
-        console.error('Erreur accompagnements:', accompagnementsError);
-        setError('Erreur lors du chargement des accompagnements');
-        return;
-      }
-
       setRepas(repasData || []);
-      setAccompagnements(accompagnementsData || []);
     } catch (err) {
       console.error('Erreur:', err);
       setError('Une erreur est survenue');
@@ -102,87 +104,121 @@ export default function MealsPage() {
   };
 
   const handleAddRepas = async () => {
-    if (!repasForm.nom || !repasForm.prix) {
+    if (!repasForm.name) {
       setNotification({
         isOpen: true,
         type: 'error',
         title: 'Champs manquants',
-        message: 'Veuillez remplir tous les champs obligatoires'
+        message: 'Veuillez remplir le nom du repas'
       });
       return;
     }
 
-    if (repasForm.accompagnements_disponibles.length === 0) {
+    if (repasForm.selectedPackIds.length === 0) {
       setNotification({
         isOpen: true,
         type: 'error',
-        title: 'Accompagnement requis',
-        message: 'Veuillez sélectionner au moins un accompagnement'
+        title: 'Packs requis',
+        message: 'Veuillez sélectionner au moins un pack'
       });
       return;
     }
 
+    // Calculer les prix à partir des packs sélectionnés
+    const prices = repasForm.selectedPackIds
+      .map(packId => packs.find(p => p.id === packId)?.price)
+      .filter((price): price is number => price !== undefined)
+      .sort((a, b) => a - b);
+
     setIsSaving(true);
     try {
-      const { error: insertError } = await supabase
-        .from('repas')
-        .insert([{
-          nom: repasForm.nom,
-          description: repasForm.description || null,
-          prix: parseInt(repasForm.prix),
-          image_url: repasForm.image_url || null,
-          accompagnements_disponibles: repasForm.accompagnements_disponibles,
-          disponible: repasForm.disponible,
-        }]);
+      if (editingItem) {
+        // Mode édition
+        const { error: updateError } = await supabase
+          .from('repas')
+          .update({
+            name: repasForm.name,
+            prices: prices,
+            pack_ids: repasForm.selectedPackIds,
+            disponible: repasForm.disponible,
+          })
+          .eq('id', editingItem.id);
 
-      if (insertError) {
-        console.error('Erreur:', insertError);
+        if (updateError) {
+          console.error('Erreur:', updateError);
+          setNotification({
+            isOpen: true,
+            type: 'error',
+            title: 'Erreur',
+            message: 'Erreur lors de la mise à jour du repas'
+          });
+          return;
+        }
+
         setNotification({
           isOpen: true,
-          type: 'error',
-          title: 'Erreur',
-          message: 'Erreur lors de l\'ajout du repas'
+          type: 'success',
+          title: 'Succès',
+          message: 'Repas mis à jour avec succès'
         });
-        return;
+      } else {
+        // Mode ajout
+        const { error: insertError } = await supabase
+          .from('repas')
+          .insert([{
+            name: repasForm.name,
+            prices: prices,
+            pack_ids: repasForm.selectedPackIds,
+            disponible: repasForm.disponible,
+          }]);
+
+        if (insertError) {
+          console.error('Erreur:', insertError);
+          setNotification({
+            isOpen: true,
+            type: 'error',
+            title: 'Erreur',
+            message: 'Erreur lors de l\'ajout du repas'
+          });
+          return;
+        }
+
+        // Enregistrer le log de création
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          await supabase.rpc('create_log', {
+            p_user_id: session.user.id,
+            p_action: 'create',
+            p_entity_type: 'meal',
+            p_entity_id: null,
+            p_description: `Création d'un nouveau repas: ${repasForm.name}`,
+            p_metadata: {
+              name: repasForm.name,
+              prices: prices
+            },
+            p_status: 'success'
+          });
+        }
+
+        setNotification({
+          isOpen: true,
+          type: 'success',
+          title: 'Succès',
+          message: 'Repas ajouté avec succès'
+        });
       }
 
       // Réinitialiser le formulaire
       setRepasForm({
-        nom: '',
-        description: '',
-        prix: '',
-        image_url: '',
+        name: '',
+        selectedPackIds: [],
         disponible: true,
-        accompagnements_disponibles: [],
       });
 
       setShowAddModal(false);
+      setEditingItem(null);
       fetchData();
-      
-      // Enregistrer le log de création
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        await supabase.rpc('create_log', {
-          p_user_id: session.user.id,
-          p_action: 'create',
-          p_entity_type: 'meal',
-          p_entity_id: null,
-          p_description: `Création d'un nouveau repas: ${repasForm.nom}`,
-          p_metadata: {
-            nom: repasForm.nom,
-            prix: parseFloat(repasForm.prix),
-            accompagnements: repasForm.accompagnements_disponibles
-          },
-          p_status: 'success'
-        });
-      }
-      
-      setNotification({
-        isOpen: true,
-        type: 'success',
-        title: 'Succès',
-        message: 'Repas ajouté avec succès'
-      });
+
     } catch (err) {
       console.error('Erreur:', err);
       setNotification({
@@ -196,88 +232,10 @@ export default function MealsPage() {
     }
   };
 
-  const handleAddAccompagnement = async () => {
-    if (!accompagnementForm.nom) {
-      setNotification({
-        isOpen: true,
-        type: 'error',
-        title: 'Champ manquant',
-        message: 'Veuillez entrer un nom'
-      });
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      const { error: insertError } = await supabase
-        .from('accompagnements')
-        .insert([{
-          nom: accompagnementForm.nom,
-          description: accompagnementForm.description || null,
-          disponible: accompagnementForm.disponible,
-        }]);
-
-      if (insertError) {
-        console.error('Erreur:', insertError);
-        setNotification({
-          isOpen: true,
-          type: 'error',
-          title: 'Erreur',
-          message: 'Erreur lors de l\'ajout de l\'accompagnement'
-        });
-        return;
-      }
-
-      // Réinitialiser le formulaire
-      setAccompagnementForm({
-        nom: '',
-        description: '',
-        disponible: true,
-      });
-
-      setShowAddModal(false);
-      fetchData();
-      
-      // Enregistrer le log de création
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        await supabase.rpc('create_log', {
-          p_user_id: session.user.id,
-          p_action: 'create',
-          p_entity_type: 'accompaniment',
-          p_entity_id: null,
-          p_description: `Création d'un nouvel accompagnement: ${accompagnementForm.nom}`,
-          p_metadata: {
-            nom: accompagnementForm.nom,
-            description: accompagnementForm.description
-          },
-          p_status: 'success'
-        });
-      }
-      
-      setNotification({
-        isOpen: true,
-        type: 'success',
-        title: 'Succès',
-        message: 'Accompagnement ajouté avec succès'
-      });
-    } catch (err) {
-      console.error('Erreur:', err);
-      setNotification({
-        isOpen: true,
-        type: 'error',
-        title: 'Erreur',
-        message: 'Une erreur est survenue'
-      });
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleToggleDisponibilite = async (id: string, type: 'repas' | 'accompagnements', currentStatus: boolean) => {
+  const handleToggleDisponibilite = async (id: string, currentStatus: boolean) => {
     try {
       const { error: updateError } = await supabase
-        .from(type)
+        .from('repas')
         .update({ disponible: !currentStatus })
         .eq('id', id);
 
@@ -310,23 +268,23 @@ export default function MealsPage() {
     }
   };
 
-  const openDeleteConfirm = (id: string, type: 'repas' | 'accompagnements') => {
+  const openDeleteConfirm = (id: string, type: 'repas' | 'pack' = 'repas') => {
     setDeleteConfirm({ isOpen: true, id, type });
   };
 
   const handleDelete = async () => {
     const { id, type } = deleteConfirm;
     
-    // Récupérer l'élément avant suppression pour le log
+    // Récupérer l'élément avant suppression
     const itemToDelete = type === 'repas' 
       ? repas.find(r => r.id === id)
-      : accompagnements.find(a => a.id === id);
+      : packs.find(p => p.id === id);
     
     setDeleteConfirm({ isOpen: false, id: '', type: 'repas' });
 
     try {
       const { error: deleteError } = await supabase
-        .from(type)
+        .from(type === 'repas' ? 'repas' : 'pack')
         .delete()
         .eq('id', id);
 
@@ -347,11 +305,11 @@ export default function MealsPage() {
         await supabase.rpc('create_log', {
           p_user_id: session.user.id,
           p_action: 'delete',
-          p_entity_type: type === 'repas' ? 'meal' : 'accompaniment',
+          p_entity_type: type === 'repas' ? 'meal' : 'meal',
           p_entity_id: id,
-          p_description: `Suppression ${type === 'repas' ? 'du repas' : 'de l\'accompagnement'}: ${itemToDelete.nom}`,
+          p_description: `Suppression ${type === 'repas' ? 'du repas' : 'du pack'}: ${itemToDelete.name}`,
           p_metadata: {
-            nom: itemToDelete.nom,
+            name: itemToDelete.name,
             type: type
           },
           p_status: 'success'
@@ -363,7 +321,7 @@ export default function MealsPage() {
         isOpen: true,
         type: 'success',
         title: 'Succès',
-        message: 'Élément supprimé avec succès'
+        message: `${type === 'repas' ? 'Repas' : 'Pack'} supprimé avec succès`
       });
     } catch (err) {
       console.error('Erreur:', err);
@@ -379,19 +337,183 @@ export default function MealsPage() {
   const openAddModal = () => {
     setEditingItem(null);
     setRepasForm({
-      nom: '',
-      description: '',
-      prix: '',
-      image_url: '',
-      disponible: true,
-      accompagnements_disponibles: [],
-    });
-    setAccompagnementForm({
-      nom: '',
-      description: '',
+      name: '',
+      selectedPackIds: [],
       disponible: true,
     });
     setShowAddModal(true);
+  };
+
+  const openEditModal = (item: Repas) => {
+    setEditingItem(item);
+    setRepasForm({
+      name: item.name,
+      selectedPackIds: item.pack_ids || [],
+      disponible: item.disponible,
+    });
+    setShowAddModal(true);
+  };
+
+  // ========== GESTION DES PACKS ==========
+
+  const handleAddPack = async () => {
+    if (!packForm.name || !packForm.price) {
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: 'Champs manquants',
+        message: 'Veuillez remplir le nom et le prix'
+      });
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      if (editingPack) {
+        // Mode édition
+        const { error: updateError } = await supabase
+          .from('pack')
+          .update({
+            name: packForm.name,
+            price: parseInt(packForm.price),
+            description: packForm.description || null,
+            ordre: packForm.ordre ? parseInt(packForm.ordre) : 0,
+            disponible: packForm.disponible,
+          })
+          .eq('id', editingPack.id);
+
+        if (updateError) {
+          console.error('Erreur:', updateError);
+          setNotification({
+            isOpen: true,
+            type: 'error',
+            title: 'Erreur',
+            message: 'Erreur lors de la mise à jour du pack'
+          });
+          return;
+        }
+
+        setNotification({
+          isOpen: true,
+          type: 'success',
+          title: 'Succès',
+          message: 'Pack mis à jour avec succès'
+        });
+      } else {
+        // Mode ajout
+        const { error: insertError } = await supabase
+          .from('pack')
+          .insert([{
+            name: packForm.name,
+            price: parseInt(packForm.price),
+            description: packForm.description || null,
+            ordre: packForm.ordre ? parseInt(packForm.ordre) : packs.length + 1,
+            disponible: packForm.disponible,
+          }]);
+
+        if (insertError) {
+          console.error('Erreur:', insertError);
+          setNotification({
+            isOpen: true,
+            type: 'error',
+            title: 'Erreur',
+            message: 'Erreur lors de l\'ajout du pack'
+          });
+          return;
+        }
+
+        setNotification({
+          isOpen: true,
+          type: 'success',
+          title: 'Succès',
+          message: 'Pack ajouté avec succès'
+        });
+      }
+
+      // Réinitialiser le formulaire
+      setPackForm({
+        name: '',
+        price: '',
+        description: '',
+        ordre: '',
+        disponible: true,
+      });
+
+      setShowAddPackModal(false);
+      setEditingPack(null);
+      fetchData();
+
+    } catch (err) {
+      console.error('Erreur:', err);
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: 'Erreur',
+        message: 'Une erreur est survenue'
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleTogglePackDisponibilite = async (id: string, currentStatus: boolean) => {
+    try {
+      const { error: updateError } = await supabase
+        .from('pack')
+        .update({ disponible: !currentStatus })
+        .eq('id', id);
+
+      if (updateError) {
+        console.error('Erreur:', updateError);
+        setNotification({
+          isOpen: true,
+          type: 'error',
+          title: 'Erreur',
+          message: 'Erreur lors de la mise à jour'
+        });
+        return;
+      }
+
+      fetchData();
+      setNotification({
+        isOpen: true,
+        type: 'success',
+        title: 'Succès',
+        message: 'Disponibilité mise à jour'
+      });
+    } catch (err) {
+      console.error('Erreur:', err);
+      setNotification({
+        isOpen: true,
+        type: 'error',
+        title: 'Erreur',
+        message: 'Une erreur est survenue'
+      });
+    }
+  };
+
+  const openAddPackModal = () => {
+    setEditingPack(null);
+    setPackForm({
+      name: '',
+      price: '',
+      description: '',
+      ordre: '',
+      disponible: true,
+    });
+    setShowAddPackModal(true);
+  };
+
+  const openEditPackModal = (pack: Pack) => {
+    setEditingPack(pack);
+    setPackForm({
+      name: pack.name,
+      price: pack.price.toString(),
+      description: pack.description || '',
+      ordre: pack.ordre.toString(),
+      disponible: pack.disponible,
+    });
+    setShowAddPackModal(true);
   };
 
   return (
@@ -402,16 +524,16 @@ export default function MealsPage() {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h1 className="text-2xl font-bold text-foreground mb-2">Gestion des repas</h1>
-              <p className="text-gray-600">Gérez les plats et accompagnements disponibles</p>
+              <p className="text-gray-600">Gérez les plats et les packs de prix</p>
             </div>
             <button
-              onClick={openAddModal}
-              className="px-6 py-3 bg-[var(--primary)] text-white rounded-xl hover:opacity-90 transition-all flex items-center gap-2"
+              onClick={activeTab === 'repas' ? openAddModal : openAddPackModal}
+              className="px-6 py-3 bg-[var(--primary)] text-white rounded-xl hover:opacity-90 transition-all flex items-center gap-2 cursor-pointer"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-              Ajouter
+              {activeTab === 'repas' ? 'Ajouter un repas' : 'Ajouter un pack'}
             </button>
           </div>
         </div>
@@ -428,19 +550,49 @@ export default function MealsPage() {
                     : 'border-transparent text-gray-600 hover:text-gray-900'
                 }`}
               >
-                Plats principaux ({repas.length})
+                Repas ({repas.length})
               </button>
               <button
-                onClick={() => setActiveTab('accompagnements')}
+                onClick={() => setActiveTab('packs')}
                 className={`px-4 py-3 font-medium transition-all border-b-2 ${
-                  activeTab === 'accompagnements'
+                  activeTab === 'packs'
                     ? 'border-[var(--primary)] text-[var(--primary)]'
                     : 'border-transparent text-gray-600 hover:text-gray-900'
                 }`}
               >
-                Accompagnements ({accompagnements.length})
+                Packs de prix ({packs.length})
               </button>
             </div>
+          </div>
+        </div>
+
+        {/* Statistiques rapides */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="bg-white rounded-xl p-4 border border-gray-200">
+            <p className="text-sm text-gray-600 mb-1">
+              {activeTab === 'repas' ? 'Total des repas' : 'Total des packs'}
+            </p>
+            <p className="text-2xl font-bold text-foreground">
+              {activeTab === 'repas' ? repas.length : packs.length}
+            </p>
+          </div>
+          <div className="bg-white rounded-xl p-4 border border-gray-200">
+            <p className="text-sm text-gray-600 mb-1">Disponibles</p>
+            <p className="text-2xl font-bold text-green-600">
+              {activeTab === 'repas' 
+                ? repas.filter(r => r.disponible).length
+                : packs.filter(p => p.disponible).length
+              }
+            </p>
+          </div>
+          <div className="bg-white rounded-xl p-4 border border-gray-200">
+            <p className="text-sm text-gray-600 mb-1">Indisponibles</p>
+            <p className="text-2xl font-bold text-gray-600">
+              {activeTab === 'repas'
+                ? repas.filter(r => !r.disponible).length
+                : packs.filter(p => !p.disponible).length
+              }
+            </p>
           </div>
         </div>
 
@@ -464,88 +616,81 @@ export default function MealsPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                     </svg>
                     <p className="text-gray-500 mb-2">Aucun repas pour le moment</p>
-                    <p className="text-sm text-gray-400">Cliquez sur "Ajouter" pour créer un repas</p>
+                    <p className="text-sm text-gray-400">Cliquez sur "Ajouter un repas" pour commencer</p>
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead className="bg-gray-50 border-b border-gray-200">
-                        <tr>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Nom</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Description</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Prix</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Accompagnements</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Statut</th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        {repas.map((item) => (
-                          <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-                            <td className="px-4 py-3 text-sm font-medium text-foreground">
-                              {item.nom}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-gray-600">
-                              {item.description || '-'}
-                            </td>
-                            <td className="px-4 py-3 text-sm font-medium text-foreground">
-                              {item.prix.toLocaleString()} FCFA
-                            </td>
-                            <td className="px-4 py-3 text-sm text-gray-600">
-                              {item.accompagnements_disponibles && item.accompagnements_disponibles.length > 0 ? (
-                                <div className="flex flex-wrap gap-1">
-                                  {item.accompagnements_disponibles.slice(0, 3).map((acc, idx) => (
-                                    <span key={idx} className="inline-flex px-2 py-0.5 text-xs bg-blue-100 text-blue-800 rounded">
-                                      {acc}
-                                    </span>
-                                  ))}
-                                  {item.accompagnements_disponibles.length > 3 && (
-                                    <span className="text-xs text-gray-500">+{item.accompagnements_disponibles.length - 3}</span>
-                                  )}
-                                </div>
-                              ) : (
-                                <span className="text-gray-400">Aucun</span>
-                              )}
-                            </td>
-                            <td className="px-4 py-3">
-                              <button
-                                onClick={() => handleToggleDisponibilite(item.id, 'repas', item.disponible)}
-                                className={`inline-flex px-3 py-1 text-xs font-medium rounded-full ${
-                                  item.disponible
-                                    ? 'bg-green-100 text-green-800'
-                                    : 'bg-gray-100 text-gray-800'
-                                }`}
-                              >
-                                {item.disponible ? 'Disponible' : 'Indisponible'}
-                              </button>
-                            </td>
-                            <td className="px-4 py-3">
-                              <button
-                                onClick={() => openDeleteConfirm(item.id, 'repas')}
-                                className="text-red-600 hover:text-red-800 text-sm font-medium cursor-pointer"
-                              >
-                                Supprimer
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Nom</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Prix</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Statut</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {repas.map((item) => (
+                      <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3 text-sm font-medium text-foreground">
+                          {item.name}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-600">
+                          <div className="flex flex-wrap gap-2">
+                            {item.prices.map((price, idx) => (
+                              <span key={idx} className="inline-flex px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded">
+                                {price.toLocaleString()} FCFA
+                              </span>
+                            ))}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <button
+                            onClick={() => handleToggleDisponibilite(item.id, item.disponible)}
+                            className={`inline-flex px-3 py-1 text-xs font-medium rounded-full cursor-pointer ${
+                              item.disponible
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-gray-100 text-gray-800'
+                            }`}
+                          >
+                            {item.disponible ? 'Disponible' : 'Indisponible'}
+                          </button>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex gap-3">
+                            <button
+                              onClick={() => openEditModal(item)}
+                              className="text-[var(--primary)] hover:underline text-sm font-medium cursor-pointer"
+                            >
+                              Modifier
+                            </button>
+                            <button
+                              onClick={() => openDeleteConfirm(item.id)}
+                              className="text-red-600 hover:text-red-800 text-sm font-medium cursor-pointer"
+                            >
+                              Supprimer
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
                 )}
               </div>
             )}
 
-            {/* Liste des accompagnements */}
-            {activeTab === 'accompagnements' && (
+            {/* Liste des packs */}
+            {activeTab === 'packs' && (
               <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                {accompagnements.length === 0 ? (
+                {packs.length === 0 ? (
                   <div className="text-center py-12">
                     <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                     </svg>
-                    <p className="text-gray-500 mb-2">Aucun accompagnement pour le moment</p>
-                    <p className="text-sm text-gray-400">Cliquez sur "Ajouter" pour créer un accompagnement</p>
+                    <p className="text-gray-500 mb-2">Aucun pack pour le moment</p>
+                    <p className="text-sm text-gray-400">Cliquez sur "Ajouter un pack" pour commencer</p>
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
@@ -553,39 +698,55 @@ export default function MealsPage() {
                       <thead className="bg-gray-50 border-b border-gray-200">
                         <tr>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Nom</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Prix</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Description</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Ordre</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Statut</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
-                        {accompagnements.map((item) => (
-                          <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                        {packs.map((pack) => (
+                          <tr key={pack.id} className="hover:bg-gray-50 transition-colors">
                             <td className="px-4 py-3 text-sm font-medium text-foreground">
-                              {item.nom}
+                              {pack.name}
+                            </td>
+                            <td className="px-4 py-3 text-sm font-bold text-[var(--primary)]">
+                              {pack.price.toLocaleString()} FCFA
                             </td>
                             <td className="px-4 py-3 text-sm text-gray-600">
-                              {item.description || '-'}
+                              {pack.description || '-'}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-gray-600">
+                              {pack.ordre}
                             </td>
                             <td className="px-4 py-3">
                               <button
-                                onClick={() => handleToggleDisponibilite(item.id, 'accompagnements', item.disponible)}
-                                className={`inline-flex px-3 py-1 text-xs font-medium rounded-full ${
-                                  item.disponible
+                                onClick={() => handleTogglePackDisponibilite(pack.id, pack.disponible)}
+                                className={`inline-flex px-3 py-1 text-xs font-medium rounded-full cursor-pointer ${
+                                  pack.disponible
                                     ? 'bg-green-100 text-green-800'
                                     : 'bg-gray-100 text-gray-800'
                                 }`}
                               >
-                                {item.disponible ? 'Disponible' : 'Indisponible'}
+                                {pack.disponible ? 'Disponible' : 'Indisponible'}
                               </button>
                             </td>
                             <td className="px-4 py-3">
-                              <button
-                                onClick={() => openDeleteConfirm(item.id, 'accompagnements')}
-                                className="text-red-600 hover:text-red-800 text-sm font-medium cursor-pointer"
-                              >
-                                Supprimer
-                              </button>
+                              <div className="flex gap-3">
+                                <button
+                                  onClick={() => openEditPackModal(pack)}
+                                  className="text-[var(--primary)] hover:underline text-sm font-medium cursor-pointer"
+                                >
+                                  Modifier
+                                </button>
+                                <button
+                                  onClick={() => openDeleteConfirm(pack.id, 'pack')}
+                                  className="text-red-600 hover:text-red-800 text-sm font-medium cursor-pointer"
+                                >
+                                  Supprimer
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -598,17 +759,20 @@ export default function MealsPage() {
           </>
         )}
 
-        {/* Modal d'ajout */}
+        {/* Modal d'ajout/édition */}
         {showAddModal && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-2xl max-w-md w-full p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold text-foreground">
-                  {activeTab === 'repas' ? 'Ajouter un plat' : 'Ajouter un accompagnement'}
+                  {editingItem ? 'Modifier le repas' : 'Ajouter un repas'}
                 </h2>
                 <button
-                  onClick={() => setShowAddModal(false)}
-                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  onClick={() => {
+                    setShowAddModal(false);
+                    setEditingItem(null);
+                  }}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -616,191 +780,216 @@ export default function MealsPage() {
                 </button>
               </div>
 
-              {activeTab === 'repas' ? (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nom du plat *
-                    </label>
-                    <input
-                      type="text"
-                      value={repasForm.nom}
-                      onChange={(e) => setRepasForm({ ...repasForm, nom: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                      placeholder="Ex: Riz sauce"
-                    />
-                  </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Nom du repas *
+                  </label>
+                  <input
+                    type="text"
+                    value={repasForm.name}
+                    onChange={(e) => setRepasForm({ ...repasForm, name: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                    placeholder="Ex: Riz sauce poisson"
+                  />
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Description
-                    </label>
-                    <textarea
-                      value={repasForm.description}
-                      onChange={(e) => setRepasForm({ ...repasForm, description: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                      rows={3}
-                      placeholder="Description du plat..."
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Prix (FCFA) *
-                    </label>
-                    <input
-                      type="number"
-                      value={repasForm.prix}
-                      onChange={(e) => setRepasForm({ ...repasForm, prix: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                      placeholder="2000"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      URL de l'image
-                    </label>
-                    <input
-                      type="text"
-                      value={repasForm.image_url}
-                      onChange={(e) => setRepasForm({ ...repasForm, image_url: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                      placeholder="https://..."
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Accompagnements disponibles *
-                    </label>
-                    <div className="border border-gray-300 rounded-lg p-3 max-h-40 overflow-y-auto">
-                      {accompagnements.length === 0 ? (
-                        <p className="text-sm text-gray-500">Aucun accompagnement disponible. Créez-en d'abord dans l'onglet Accompagnements.</p>
-                      ) : (
-                        <div className="space-y-2">
-                          {accompagnements.map((acc) => (
-                            <label key={acc.id} className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
-                              <input
-                                type="checkbox"
-                                checked={repasForm.accompagnements_disponibles.includes(acc.nom)}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    setRepasForm({
-                                      ...repasForm,
-                                      accompagnements_disponibles: [...repasForm.accompagnements_disponibles, acc.nom]
-                                    });
-                                  } else {
-                                    setRepasForm({
-                                      ...repasForm,
-                                      accompagnements_disponibles: repasForm.accompagnements_disponibles.filter(n => n !== acc.nom)
-                                    });
-                                  }
-                                }}
-                                className="w-4 h-4 text-[var(--primary)] border-gray-300 rounded focus:ring-[var(--primary)]"
-                              />
-                              <span className="text-sm text-gray-700">{acc.nom}</span>
-                            </label>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    {repasForm.accompagnements_disponibles.length > 0 && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        {repasForm.accompagnements_disponibles.length} accompagnement(s) sélectionné(s)
-                      </p>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Sélectionner les packs de prix *
+                  </label>
+                  <div className="border border-gray-300 rounded-lg p-4 space-y-3 max-h-60 overflow-y-auto">
+                    {packs.length === 0 ? (
+                      <p className="text-sm text-gray-500">Aucun pack disponible</p>
+                    ) : (
+                      packs.map((pack) => (
+                        <label
+                          key={pack.id}
+                          className="flex items-start gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={repasForm.selectedPackIds.includes(pack.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setRepasForm({
+                                  ...repasForm,
+                                  selectedPackIds: [...repasForm.selectedPackIds, pack.id]
+                                });
+                              } else {
+                                setRepasForm({
+                                  ...repasForm,
+                                  selectedPackIds: repasForm.selectedPackIds.filter(id => id !== pack.id)
+                                });
+                              }
+                            }}
+                            className="w-4 h-4 text-[var(--primary)] border-gray-300 rounded focus:ring-[var(--primary)] mt-1"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium text-gray-900">{pack.name}</span>
+                              <span className="text-sm font-bold text-[var(--primary)]">{pack.price.toLocaleString()} FCFA</span>
+                            </div>
+                            {pack.description && (
+                              <p className="text-xs text-gray-500 mt-1">{pack.description}</p>
+                            )}
+                          </div>
+                        </label>
+                      ))
                     )}
                   </div>
-
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="disponible-repas"
-                      checked={repasForm.disponible}
-                      onChange={(e) => setRepasForm({ ...repasForm, disponible: e.target.checked })}
-                      className="w-4 h-4 text-[var(--primary)] border-gray-300 rounded focus:ring-[var(--primary)]"
-                    />
-                    <label htmlFor="disponible-repas" className="text-sm text-gray-700">
-                      Disponible
-                    </label>
-                  </div>
-
-                  <div className="flex gap-3 pt-4">
-                    <button
-                      onClick={() => setShowAddModal(false)}
-                      className="flex-1 px-4 py-2 bg-gray-200 text-foreground rounded-lg hover:bg-gray-300 transition-all"
-                    >
-                      Annuler
-                    </button>
-                    <button
-                      onClick={handleAddRepas}
-                      disabled={isSaving}
-                      className="flex-1 px-4 py-2 bg-[var(--primary)] text-white rounded-lg hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                    >
-                      {isSaving && <Spinner size="sm" />}
-                      {isSaving ? 'Ajout...' : 'Ajouter'}
-                    </button>
-                  </div>
+                  {repasForm.selectedPackIds.length > 0 && (
+                    <p className="text-xs text-gray-500 mt-2">
+                      {repasForm.selectedPackIds.length} pack(s) sélectionné(s)
+                    </p>
+                  )}
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nom de l'accompagnement *
-                    </label>
-                    <input
-                      type="text"
-                      value={accompagnementForm.nom}
-                      onChange={(e) => setAccompagnementForm({ ...accompagnementForm, nom: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                      placeholder="Ex: Poisson"
-                    />
-                  </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Description
-                    </label>
-                    <textarea
-                      value={accompagnementForm.description}
-                      onChange={(e) => setAccompagnementForm({ ...accompagnementForm, description: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
-                      rows={3}
-                      placeholder="Description de l'accompagnement..."
-                    />
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="disponible-accompagnement"
-                      checked={accompagnementForm.disponible}
-                      onChange={(e) => setAccompagnementForm({ ...accompagnementForm, disponible: e.target.checked })}
-                      className="w-4 h-4 text-[var(--primary)] border-gray-300 rounded focus:ring-[var(--primary)]"
-                    />
-                    <label htmlFor="disponible-accompagnement" className="text-sm text-gray-700">
-                      Disponible
-                    </label>
-                  </div>
-
-                  <div className="flex gap-3 pt-4">
-                    <button
-                      onClick={() => setShowAddModal(false)}
-                      className="flex-1 px-4 py-2 bg-gray-200 text-foreground rounded-lg hover:bg-gray-300 transition-all"
-                    >
-                      Annuler
-                    </button>
-                    <button
-                      onClick={handleAddAccompagnement}
-                      disabled={isSaving}
-                      className="flex-1 px-4 py-2 bg-[var(--primary)] text-white rounded-lg hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                    >
-                      {isSaving && <Spinner size="sm" />}
-                      {isSaving ? 'Ajout...' : 'Ajouter'}
-                    </button>
-                  </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="disponible-repas"
+                    checked={repasForm.disponible}
+                    onChange={(e) => setRepasForm({ ...repasForm, disponible: e.target.checked })}
+                    className="w-4 h-4 text-[var(--primary)] border-gray-300 rounded focus:ring-[var(--primary)]"
+                  />
+                  <label htmlFor="disponible-repas" className="text-sm text-gray-700">
+                    Disponible
+                  </label>
                 </div>
-              )}
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    onClick={() => {
+                      setShowAddModal(false);
+                      setEditingItem(null);
+                    }}
+                    className="flex-1 px-4 py-2 bg-gray-200 text-foreground rounded-lg hover:bg-gray-300 transition-all cursor-pointer"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    onClick={handleAddRepas}
+                    disabled={isSaving}
+                    className="flex-1 px-4 py-2 bg-[var(--primary)] text-white rounded-lg hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    {isSaving && <Spinner size="sm" />}
+                    {isSaving ? (editingItem ? 'Modification...' : 'Ajout...') : (editingItem ? 'Modifier' : 'Ajouter')}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal d'ajout/édition de pack */}
+        {showAddPackModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl max-w-md w-full p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-foreground">
+                  {editingPack ? 'Modifier le pack' : 'Ajouter un pack'}
+                </h2>
+                <button
+                  onClick={() => {
+                    setShowAddPackModal(false);
+                    setEditingPack(null);
+                  }}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Nom du pack *
+                  </label>
+                  <input
+                    type="text"
+                    value={packForm.name}
+                    onChange={(e) => setPackForm({ ...packForm, name: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                    placeholder="Ex: Pack Standard"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Prix (FCFA) *
+                  </label>
+                  <input
+                    type="number"
+                    value={packForm.price}
+                    onChange={(e) => setPackForm({ ...packForm, price: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                    placeholder="1000"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    value={packForm.description}
+                    onChange={(e) => setPackForm({ ...packForm, description: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                    rows={3}
+                    placeholder="Description du pack..."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Ordre d'affichage
+                  </label>
+                  <input
+                    type="number"
+                    value={packForm.ordre}
+                    onChange={(e) => setPackForm({ ...packForm, ordre: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+                    placeholder="1"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Plus le nombre est petit, plus le pack apparaît en premier</p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="disponible-pack"
+                    checked={packForm.disponible}
+                    onChange={(e) => setPackForm({ ...packForm, disponible: e.target.checked })}
+                    className="w-4 h-4 text-[var(--primary)] border-gray-300 rounded focus:ring-[var(--primary)]"
+                  />
+                  <label htmlFor="disponible-pack" className="text-sm text-gray-700">
+                    Disponible
+                  </label>
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <button
+                    onClick={() => {
+                      setShowAddPackModal(false);
+                      setEditingPack(null);
+                    }}
+                    className="flex-1 px-4 py-2 bg-gray-200 text-foreground rounded-lg hover:bg-gray-300 transition-all cursor-pointer"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    onClick={handleAddPack}
+                    disabled={isSaving}
+                    className="flex-1 px-4 py-2 bg-[var(--primary)] text-white rounded-lg hover:opacity-90 transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    {isSaving && <Spinner size="sm" />}
+                    {isSaving ? (editingPack ? 'Modification...' : 'Ajout...') : (editingPack ? 'Modifier' : 'Ajouter')}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -813,7 +1002,7 @@ export default function MealsPage() {
                 Confirmer la suppression
               </h3>
               <p className="text-gray-600 mb-6">
-                Êtes-vous sûr de vouloir supprimer cet élément ? Cette action est irréversible.
+                Êtes-vous sûr de vouloir supprimer ce {deleteConfirm.type === 'repas' ? 'repas' : 'pack'} ? Cette action est irréversible.
               </p>
               <div className="flex gap-3">
                 <button

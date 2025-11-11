@@ -77,6 +77,7 @@ export default function OrdersPage() {
       filtered = filtered.filter(cmd => cmd.statut === statusFilter);
     }
 
+    setFilteredCommandes(filtered);
   };
 
   const handleUpdateStatus = async (commandeId: string, newStatus: StatutCommande) => {
