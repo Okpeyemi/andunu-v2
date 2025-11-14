@@ -202,6 +202,15 @@ export default function ConsolePage() {
                   )}
                 </button>
               </div>
+              <div className="mt-2 text-right">
+                <button
+                  type="button"
+                  onClick={() => router.push('/forgot-password')}
+                  className="text-sm text-[var(--primary)] hover:underline"
+                >
+                  Mot de passe oublié ?
+                </button>
+              </div>
             </div>
 
             {/* Message d'erreur */}

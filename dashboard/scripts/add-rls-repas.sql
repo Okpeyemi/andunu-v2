@@ -13,7 +13,7 @@ BEGIN
     SELECT 1 
     FROM users
     WHERE id = auth.uid()
-    AND role = 'admin'
+    AND role = 'super_admin'
   );
 END;
 $$;
