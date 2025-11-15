@@ -55,6 +55,45 @@ export interface CreateRepasInput {
   disponible?: boolean;
 }
 
+// Types pour les vendeurs
+export interface Vendeur {
+  id: string;
+  nom_complet: string;
+  telephone?: string;
+  email?: string;
+  adresse?: string;
+  actif: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateVendeurInput {
+  nom_complet: string;
+  telephone?: string;
+  email?: string;
+  adresse?: string;
+  actif?: boolean;
+}
+
+// Type pour la liaison vendeur-repas
+export interface VendeurRepas {
+  id: string;
+  vendeur_id: string;
+  repas_id: string;
+  prix_vendeur?: number;
+  created_at: string;
+}
+
+// Type pour afficher un vendeur avec ses repas
+export interface VendeurAvecRepas extends Vendeur {
+  repas: Array<{
+    id: string;
+    name: string;
+    prices: number[];
+    prix_vendeur?: number;
+  }>;
+}
+
 export type StatutPaiement = 'pending' | 'paid' | 'failed' | 'refunded';
 export type StatutCommande = 'en_attente' | 'confirmee' | 'en_preparation' | 'en_livraison' | 'livree' | 'annulee';
 export type ModePaiement = 'daily' | 'weekly';
