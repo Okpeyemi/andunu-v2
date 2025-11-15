@@ -11,7 +11,7 @@ AS $$
 BEGIN
   RETURN EXISTS (
     SELECT 1 
-    FROM users
+    FROM profiles
     WHERE id = auth.uid()
     AND role = 'super_admin'
   );
