@@ -63,3 +63,25 @@ export interface CreateCommandeInput {
   montant_total: number;
   transaction_id?: string;
 }
+
+// Types pour les tables packs et repas
+export interface Pack {
+  id: string;
+  name: string;
+  price: number;
+  description?: string;
+  disponible: boolean;
+  ordre: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Repas {
+  id: string;
+  name: string;
+  prices: number;
+  disponible: boolean;
+  created_at: string;
+  updated_at: string;
+  pack_ids: string[];
+}
