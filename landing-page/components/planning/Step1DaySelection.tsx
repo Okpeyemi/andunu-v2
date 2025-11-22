@@ -13,6 +13,51 @@ export default function Step1DaySelection({ onSubmit }: Step1DaySelectionProps) 
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const now = new Date();
+  const currentDay = now.getDay();
+
+  const getStartOfWeekMonday = (date: Date) => {
+    const d = new Date(date);
+    const jsDay = d.getDay() === 0 ? 7 : d.getDay();
+    const diff = d.getDate() - jsDay + 1;
+    d.setDate(diff);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  };
+
+  const shouldUseNextWeek = currentDay === 5 || currentDay === 6 || currentDay === 0;
+
+  const baseMonday = (() => {
+    const monday = getStartOfWeekMonday(now);
+    if (shouldUseNextWeek) {
+      monday.setDate(monday.getDate() + 7);
+    }
+    return monday;
+  })();
+
+  const startOfToday = new Date(now);
+  startOfToday.setHours(0, 0, 0, 0);
+
+  const getDateForDayIndex = (index: number) => {
+    const date = new Date(baseMonday);
+    date.setDate(baseMonday.getDate() + index);
+    return date;
+  };
+
+  const isDayDisabled = (date: Date) => {
+    const isPastDay = date < startOfToday;
+    const isSameDayAsToday = date.toDateString() === now.toDateString();
+    const isAfterCutoffToday = isSameDayAsToday && now.getHours() >= 8;
+    return isPastDay || isAfterCutoffToday;
+  };
+
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+    });
+  };
+
   const toggleDay = (day: string) => {
     setSelectedDays((prev) =>
       prev.includes(day)
@@ -38,19 +83,32 @@ export default function Step1DaySelection({ onSubmit }: Step1DaySelectionProps) 
       </h2>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 w-full max-w-2xl mb-8">
-        {DAYS.map((day) => (
-          <button
-            key={day}
-            onClick={() => toggleDay(day)}
-            className={`px-6 py-4 rounded-2xl text-lg font-medium transition-all ${
-              selectedDays.includes(day)
-                ? 'bg-[var(--primary)] text-white shadow-lg scale-105'
-                : 'bg-gray-100 text-foreground hover:bg-gray-200'
-            }`}
-          >
-            {day}
-          </button>
-        ))}
+        {DAYS.map((day, index) => {
+          const date = getDateForDayIndex(index);
+          const disabled = isDayDisabled(date);
+          const isSelected = selectedDays.includes(day);
+
+          return (
+            <button
+              key={day}
+              onClick={() => {
+                if (disabled) return;
+                toggleDay(day);
+              }}
+              disabled={disabled}
+              className={`px-6 py-4 rounded-2xl text-lg font-medium transition-all flex flex-col items-center ${
+                disabled
+                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  : isSelected
+                  ? 'bg-[var(--primary)] text-white shadow-lg scale-105'
+                  : 'bg-gray-100 text-foreground hover:bg-gray-200'
+              }`}
+            >
+              <span>{day}</span>
+              <span className="text-sm mt-1 opacity-80">{formatDate(date)}</span>
+            </button>
+          );
+        })}
       </div>
 
       <button
