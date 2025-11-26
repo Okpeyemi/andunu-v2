@@ -27,10 +27,16 @@ export default function Step7Payment({
 
   const numberOfDays = selectedDays.length;
 
-  // Calculer le total basé sur les prix réels des plats
-  const totalAmount = selectedDays.reduce((sum, day) => {
+  // Calculer le sous-total des repas
+  const mealsSubtotal = selectedDays.reduce((sum, day) => {
     return sum + (meals[day]?.price || 0);
   }, 0);
+
+  // Frais de livraison (200 FCFA par jour)
+  const deliveryFees = numberOfDays * 200;
+
+  // Total avec livraison
+  const totalAmount = mealsSubtotal + deliveryFees;
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
@@ -194,33 +200,42 @@ export default function Step7Payment({
             Ton menu
           </h3>
           <div className="pl-7 space-y-3">
-            {selectedDays.map((day) => (
-              <div key={day} className="text-gray-700">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <span className="font-medium">{day} :</span>
-                    <div className="mt-1">
-                      <div className="text-[var(--primary)] font-medium">{meals[day]?.mainDish}</div>
-                      {meals[day]?.accompagnements && meals[day].accompagnements!.length > 0 && (
-                        <div className="mt-1 ml-4 space-y-1">
-                          {meals[day].accompagnements!.map((acc) => (
-                            <div key={acc.id} className="text-sm text-gray-600 flex justify-between">
-                              <span>+ {acc.name}</span>
-                              <span className="text-gray-500">({acc.price.toLocaleString()} FCFA)</span>
-                            </div>
-                          ))}
+            {selectedDays.map((day) => {
+              const meal = meals[day];
+              const accompanimentsTotal = meal?.accompagnements?.reduce((sum, acc) => sum + acc.price, 0) || 0;
+              const mainDishPrice = (meal?.price || 0) - accompanimentsTotal;
+
+              return (
+                <div key={day} className="text-gray-700">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <span className="font-medium">{day} :</span>
+                      <div className="mt-1">
+                        <div className="flex justify-between items-center text-[var(--primary)] font-medium">
+                          <span>{meal?.mainDish}</span>
+                          <span className="text-sm text-gray-500">({mainDishPrice.toLocaleString()} FCFA)</span>
                         </div>
-                      )}
+                        {meal?.accompagnements && meal.accompagnements!.length > 0 && (
+                          <div className="mt-1 ml-4 space-y-1">
+                            {meal.accompagnements!.map((acc, index) => (
+                              <div key={`${acc.id}-${index}`} className="text-sm text-gray-600 flex justify-between">
+                                <span>+ {acc.name}</span>
+                                <span className="text-gray-500">({acc.price.toLocaleString()} FCFA)</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="text-right ml-4">
+                      <span className="font-semibold text-gray-700">
+                        {meal?.price?.toLocaleString()} FCFA
+                      </span>
                     </div>
                   </div>
-                  <div className="text-right ml-4">
-                    <span className="font-semibold text-gray-700">
-                      {meals[day]?.price?.toLocaleString()} FCFA
-                    </span>
-                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
@@ -235,14 +250,21 @@ export default function Step7Payment({
           <h3 className="text-xl font-semibold text-foreground mb-4">
             Montant à payer
           </h3>
-          <p className="text-gray-600 mb-4">
-            {numberOfDays === 1
-              ? `Pour votre repas du ${selectedDays[0]}`
-              : `Pour vos ${numberOfDays} repas`
-            }
-          </p>
-          <div className="text-3xl font-bold text-[var(--primary)]">
-            {totalAmount.toLocaleString()} FCFA
+          <div className="space-y-2 mb-4 text-gray-600">
+            <div className="flex justify-between">
+              <span>Sous-total repas ({numberOfDays} jours)</span>
+              <span>{mealsSubtotal.toLocaleString()} FCFA</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Frais de livraison (200 FCFA x {numberOfDays})</span>
+              <span>{deliveryFees.toLocaleString()} FCFA</span>
+            </div>
+          </div>
+          <div className="pt-4 border-t border-[var(--primary)]/20 flex justify-between items-center">
+            <span className="font-bold text-lg">Total</span>
+            <div className="text-3xl font-bold text-[var(--primary)]">
+              {totalAmount.toLocaleString()} FCFA
+            </div>
           </div>
         </div>
       </div>

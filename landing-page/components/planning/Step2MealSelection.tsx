@@ -97,16 +97,7 @@ export default function Step2MealSelection({
     setSelectedPriceIndex(index);
   };
 
-  const handleAccompagnementToggle = (accompagnement: Accompagnement) => {
-    setSelectedAccompagnements(prev => {
-      const isSelected = prev.some(a => a.id === accompagnement.id);
-      if (isSelected) {
-        return prev.filter(a => a.id !== accompagnement.id);
-      } else {
-        return [...prev, accompagnement];
-      }
-    });
-  };
+
 
   const handleConfirmMeal = () => {
     if (!selectedRepas) return;
@@ -289,8 +280,8 @@ export default function Step2MealSelection({
                       key={index}
                       onClick={() => handlePriceSelect(index)}
                       className={`px-4 py-3 rounded-xl text-md font-medium transition-all ${selectedPriceIndex === index
-                          ? 'bg-[var(--primary)] text-white shadow-lg'
-                          : 'bg-gray-100 text-foreground hover:bg-gray-200'
+                        ? 'bg-[var(--primary)] text-white shadow-lg'
+                        : 'bg-gray-100 text-foreground hover:bg-gray-200'
                         }`}
                     >
                       {price.toLocaleString()} FCFA
@@ -316,30 +307,66 @@ export default function Step2MealSelection({
               ) : (
                 <div className="grid grid-cols-1 gap-3">
                   {availableAccompagnements.map((acc) => {
-                    const isSelected = selectedAccompagnements.some(a => a.id === acc.id);
+                    const quantity = selectedAccompagnements.filter(a => a.id === acc.id).length;
+
                     return (
-                      <button
+                      <div
                         key={acc.id}
-                        onClick={() => handleAccompagnementToggle(acc)}
-                        className={`px-4 py-3 rounded-xl text-md transition-all ${isSelected
-                            ? 'bg-[var(--primary)] text-white shadow-lg'
-                            : 'bg-gray-100 text-foreground hover:bg-gray-200'
+                        className={`px-4 py-3 rounded-xl text-md transition-all flex justify-between items-center ${quantity > 0
+                          ? 'bg-[var(--primary)]/10 border-2 border-[var(--primary)]'
+                          : 'bg-gray-100 border-2 border-transparent'
                           }`}
                       >
-                        <div className="flex justify-between items-center">
-                          <div className="text-left">
-                            <div className="font-medium">{acc.name}</div>
-                            {acc.description && (
-                              <div className={`text-xs mt-1 ${isSelected ? 'text-white/80' : 'text-gray-500'}`}>
-                                {acc.description}
-                              </div>
-                            )}
-                          </div>
-                          <div className="font-semibold ml-4">
+                        <div className="text-left flex-1">
+                          <div className="font-medium text-foreground">{acc.name}</div>
+                          <div className="text-sm text-gray-600">
                             +{acc.price.toLocaleString()} FCFA
                           </div>
+                          {acc.description && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              {acc.description}
+                            </div>
+                          )}
                         </div>
-                      </button>
+
+                        <div className="flex items-center gap-3 ml-4">
+                          {quantity > 0 && (
+                            <>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedAccompagnements(prev => {
+                                    const index = prev.findIndex(a => a.id === acc.id);
+                                    if (index > -1) {
+                                      const newArr = [...prev];
+                                      newArr.splice(index, 1);
+                                      return newArr;
+                                    }
+                                    return prev;
+                                  });
+                                }}
+                                className="w-8 h-8 flex items-center justify-center rounded-full bg-white text-[var(--primary)] shadow-sm hover:bg-gray-50 font-bold text-lg"
+                              >
+                                -
+                              </button>
+                              <span className="font-semibold text-lg w-4 text-center text-foreground">{quantity}</span>
+                            </>
+                          )}
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedAccompagnements(prev => [...prev, acc]);
+                            }}
+                            className={`w-8 h-8 flex items-center justify-center rounded-full shadow-sm hover:opacity-90 font-bold text-lg ${quantity > 0
+                              ? 'bg-[var(--primary)] text-white'
+                              : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                              }`}
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
                     );
                   })}
                 </div>
@@ -358,8 +385,8 @@ export default function Step2MealSelection({
                 onClick={handleConfirmMeal}
                 disabled={showConfirmation}
                 className={`w-full px-6 py-4 rounded-2xl text-lg font-medium transition-all ${showConfirmation
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-[var(--primary)] text-white hover:opacity-90 shadow-lg'
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-[var(--primary)] text-white hover:opacity-90 shadow-lg'
                   }`}
               >
                 Confirmer ce repas
