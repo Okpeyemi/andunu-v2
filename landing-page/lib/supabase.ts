@@ -33,6 +33,11 @@ export type ModePaiement = 'daily' | 'weekly';
 export interface MealDetails {
   mainDish: string;
   price: number;
+  accompagnements?: Array<{
+    id: string;
+    name: string;
+    price: number;
+  }>;
 }
 
 export interface Commande {
@@ -64,24 +69,28 @@ export interface CreateCommandeInput {
   transaction_id?: string;
 }
 
-// Types pour les tables packs et repas
-export interface Pack {
-  id: string;
-  name: string;
-  price: number;
-  description?: string;
-  disponible: boolean;
-  ordre: number;
-  created_at: string;
-  updated_at: string;
-}
-
+// Types pour les tables repas et accompagnements
 export interface Repas {
   id: string;
   name: string;
-  prices: number;
+  prices: number[];
   disponible: boolean;
-  created_at: string;
-  updated_at: string;
-  pack_ids: string[];
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface Accompagnement {
+  id: string;
+  name: string;
+  price: number;
+  description?: string | null;
+  disponible: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface RepasAccompagnement {
+  repas_id: string;
+  accompagnement_id: string;
+  created_at?: string;
 }

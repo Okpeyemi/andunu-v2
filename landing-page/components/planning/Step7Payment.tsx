@@ -2,12 +2,7 @@
 
 import { useState } from 'react';
 import Spinner from '@/components/Spinner';
-import { supabase, type CreateCommandeInput } from '@/lib/supabase';
-
-interface MealDetails {
-  mainDish: string;
-  price: number;
-}
+import { supabase, type CreateCommandeInput, type MealDetails } from '@/lib/supabase';
 
 interface Step7PaymentProps {
   selectedDays: string[];
@@ -31,7 +26,7 @@ export default function Step7Payment({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const numberOfDays = selectedDays.length;
-  
+
   // Calculer le total basé sur les prix réels des plats
   const totalAmount = selectedDays.reduce((sum, day) => {
     return sum + (meals[day]?.price || 0);
@@ -198,15 +193,29 @@ export default function Step7Payment({
             </svg>
             Ton menu
           </h3>
-          <div className="pl-7 space-y-2">
+          <div className="pl-7 space-y-3">
             {selectedDays.map((day) => (
               <div key={day} className="text-gray-700">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">{day} :</span>
-                  <div className="text-right">
-                    <span className="text-[var(--primary)]">{meals[day]?.mainDish}</span>
-                    <span className="text-sm text-gray-500 ml-2">
-                      ({meals[day]?.price?.toLocaleString()} FCFA)
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <span className="font-medium">{day} :</span>
+                    <div className="mt-1">
+                      <div className="text-[var(--primary)] font-medium">{meals[day]?.mainDish}</div>
+                      {meals[day]?.accompagnements && meals[day].accompagnements!.length > 0 && (
+                        <div className="mt-1 ml-4 space-y-1">
+                          {meals[day].accompagnements!.map((acc) => (
+                            <div key={acc.id} className="text-sm text-gray-600 flex justify-between">
+                              <span>+ {acc.name}</span>
+                              <span className="text-gray-500">({acc.price.toLocaleString()} FCFA)</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right ml-4">
+                    <span className="font-semibold text-gray-700">
+                      {meals[day]?.price?.toLocaleString()} FCFA
                     </span>
                   </div>
                 </div>
@@ -227,7 +236,7 @@ export default function Step7Payment({
             Montant à payer
           </h3>
           <p className="text-gray-600 mb-4">
-            {numberOfDays === 1 
+            {numberOfDays === 1
               ? `Pour votre repas du ${selectedDays[0]}`
               : `Pour vos ${numberOfDays} repas`
             }
@@ -248,11 +257,10 @@ export default function Step7Payment({
         <button
           onClick={handleSubmit}
           disabled={isSubmitting}
-          className={`px-8 py-3 rounded-2xl text-lg font-medium transition-all flex items-center gap-2 ${
-            !isSubmitting
-              ? 'bg-[var(--primary)] text-white hover:opacity-90'
-              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-          }`}
+          className={`px-8 py-3 rounded-2xl text-lg font-medium transition-all flex items-center gap-2 ${!isSubmitting
+            ? 'bg-[var(--primary)] text-white hover:opacity-90'
+            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+            }`}
         >
           {isSubmitting && <Spinner size="sm" />}
           Payer {totalAmount.toLocaleString()} FCFA

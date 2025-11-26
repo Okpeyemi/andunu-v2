@@ -79,7 +79,7 @@ export default function PlanifierPage() {
     <div className="min-h-screen bg-white">
       {/* Bouton d'aide pour le développement */}
       <DevPaymentInfo />
-      
+
       {/* Logo en haut au centre */}
       <div className="flex justify-center pt-8 pb-6">
         <h1 className="text-3xl sm:text-4xl md:text-5xl font-semibold text-foreground">
@@ -93,13 +93,12 @@ export default function PlanifierPage() {
           {[1, 2, 3, 4, 5, 6, 7].map((step) => (
             <div
               key={step}
-              className={`h-2 flex-1 rounded-full transition-all ${
-                step === currentStep
+              className={`h-2 flex-1 rounded-full transition-all ${step === currentStep
                   ? 'bg-[var(--primary)]'
                   : step < currentStep
-                  ? 'bg-[var(--primary)]/60'
-                  : 'bg-gray-200'
-              }`}
+                    ? 'bg-[var(--primary)]/60'
+                    : 'bg-gray-200'
+                }`}
             />
           ))}
         </div>

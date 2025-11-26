@@ -17,6 +17,10 @@ export interface Repas {
     updated_at?: string;
 }
 
+export interface RepasAvecAccompagnements extends Repas {
+    accompagnements: Accompagnement[];
+}
+
 export interface Accompagnement {
     id: string;
     name: string;

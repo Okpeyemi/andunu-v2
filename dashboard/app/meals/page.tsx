@@ -4,16 +4,18 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import Spinner from '@/components/Spinner';
 import NotificationModal from '@/components/NotificationModal';
-import { supabase, type Repas, type Accompagnement } from '@/lib/supabase';
+import { supabase, type Repas, type Accompagnement, type RepasAvecAccompagnements } from '@/lib/supabase';
 
 export default function MealsPage() {
   const [activeTab, setActiveTab] = useState<'repas' | 'accompagnements'>('repas');
-  const [repas, setRepas] = useState<Repas[]>([]);
+  const [repas, setRepas] = useState<RepasAvecAccompagnements[]>([]);
   const [accompagnements, setAccompagnements] = useState<Accompagnement[]>([]);
+  const [repasAccompagnements, setRepasAccompagnements] = useState<{ [repasId: string]: string[] }>({});
+  const [selectedAccompagnements, setSelectedAccompagnements] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
-  const [editingItem, setEditingItem] = useState<Repas | null>(null);
+  const [editingItem, setEditingItem] = useState<RepasAvecAccompagnements | null>(null);
   const [editingAccompagnement, setEditingAccompagnement] = useState<Accompagnement | null>(null);
   const [showAddAccompagnementModal, setShowAddAccompagnementModal] = useState(false);
 
@@ -93,7 +95,35 @@ export default function MealsPage() {
         return;
       }
 
-      setRepas(repasData || []);
+      // Récupérer les associations repas-accompagnements
+      const { data: associationsData, error: associationsError } = await supabase
+        .from('repas_accompagnements')
+        .select('repas_id, accompagnement_id');
+
+      if (associationsError) {
+        console.error('Erreur associations:', associationsError);
+      }
+
+      // Créer un mapping des associations
+      const associationsMap: { [repasId: string]: string[] } = {};
+      (associationsData || []).forEach((assoc) => {
+        if (!associationsMap[assoc.repas_id]) {
+          associationsMap[assoc.repas_id] = [];
+        }
+        associationsMap[assoc.repas_id].push(assoc.accompagnement_id);
+      });
+
+      setRepasAccompagnements(associationsMap);
+
+      // Enrichir les repas avec leurs accompagnements
+      const repasAvecAccompagnements: RepasAvecAccompagnements[] = (repasData || []).map((r) => ({
+        ...r,
+        accompagnements: (associationsMap[r.id] || [])
+          .map((accId) => accompagnementsData?.find((a) => a.id === accId))
+          .filter((a): a is Accompagnement => a !== undefined),
+      }));
+
+      setRepas(repasAvecAccompagnements);
     } catch (err) {
       console.error('Erreur:', err);
       setError('Une erreur est survenue');
@@ -132,8 +162,12 @@ export default function MealsPage() {
 
     setIsSaving(true);
     try {
+      let repasId: string;
+
       if (editingItem) {
         // Mode édition
+        repasId = editingItem.id;
+
         const { error: updateError } = await supabase
           .from('repas')
           .update({
@@ -154,23 +188,25 @@ export default function MealsPage() {
           return;
         }
 
-        setNotification({
-          isOpen: true,
-          type: 'success',
-          title: 'Succès',
-          message: 'Repas mis à jour avec succès'
-        });
+        // Supprimer les anciennes associations
+        await supabase
+          .from('repas_accompagnements')
+          .delete()
+          .eq('repas_id', repasId);
+
       } else {
         // Mode ajout
-        const { error: insertError } = await supabase
+        const { data: insertData, error: insertError } = await supabase
           .from('repas')
           .insert([{
             name: repasForm.name,
             prices: pricesArray,
             disponible: repasForm.disponible,
-          }]);
+          }])
+          .select()
+          .single();
 
-        if (insertError) {
+        if (insertError || !insertData) {
           console.error('Erreur:', insertError);
           setNotification({
             isOpen: true,
@@ -181,6 +217,8 @@ export default function MealsPage() {
           return;
         }
 
+        repasId = insertData.id;
+
         // Enregistrer le log de création
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
@@ -188,7 +226,7 @@ export default function MealsPage() {
             p_user_id: session.user.id,
             p_action: 'create',
             p_entity_type: 'meal',
-            p_entity_id: null,
+            p_entity_id: repasId,
             p_description: `Création d'un nouveau repas: ${repasForm.name}`,
             p_metadata: {
               name: repasForm.name,
@@ -197,14 +235,31 @@ export default function MealsPage() {
             p_status: 'success'
           });
         }
-
-        setNotification({
-          isOpen: true,
-          type: 'success',
-          title: 'Succès',
-          message: 'Repas ajouté avec succès'
-        });
       }
+
+      // Sauvegarder les nouvelles associations d'accompagnements
+      if (selectedAccompagnements.length > 0) {
+        const associations = selectedAccompagnements.map(accompagnementId => ({
+          repas_id: repasId,
+          accompagnement_id: accompagnementId,
+        }));
+
+        const { error: assocError } = await supabase
+          .from('repas_accompagnements')
+          .insert(associations);
+
+        if (assocError) {
+          console.error('Erreur associations:', assocError);
+          // Ne pas bloquer si erreur d'association
+        }
+      }
+
+      setNotification({
+        isOpen: true,
+        type: 'success',
+        title: 'Succès',
+        message: editingItem ? 'Repas mis à jour avec succès' : 'Repas ajouté avec succès'
+      });
 
       // Réinitialiser le formulaire
       setRepasForm({
@@ -212,6 +267,7 @@ export default function MealsPage() {
         prices: '',
         disponible: true,
       });
+      setSelectedAccompagnements([]);
 
       setShowAddModal(false);
       setEditingItem(null);
@@ -467,6 +523,7 @@ export default function MealsPage() {
 
   const openAddModal = () => {
     setEditingItem(null);
+    setSelectedAccompagnements([]);
     setRepasForm({
       name: '',
       prices: '',
@@ -475,8 +532,9 @@ export default function MealsPage() {
     setShowAddModal(true);
   };
 
-  const openEditModal = (item: Repas) => {
+  const openEditModal = (item: RepasAvecAccompagnements) => {
     setEditingItem(item);
+    setSelectedAccompagnements(item.accompagnements.map(a => a.id));
     setRepasForm({
       name: item.name,
       prices: item.prices.join(', '),
@@ -536,8 +594,8 @@ export default function MealsPage() {
               <button
                 onClick={() => setActiveTab('repas')}
                 className={`px-4 py-3 font-medium transition-all border-b-2 ${activeTab === 'repas'
-                    ? 'border-[var(--primary)] text-[var(--primary)]'
-                    : 'border-transparent text-gray-600 hover:text-gray-900'
+                  ? 'border-[var(--primary)] text-[var(--primary)]'
+                  : 'border-transparent text-gray-600 hover:text-gray-900'
                   }`}
               >
                 Repas ({repas.length})
@@ -545,8 +603,8 @@ export default function MealsPage() {
               <button
                 onClick={() => setActiveTab('accompagnements')}
                 className={`px-4 py-3 font-medium transition-all border-b-2 ${activeTab === 'accompagnements'
-                    ? 'border-[var(--primary)] text-[var(--primary)]'
-                    : 'border-transparent text-gray-600 hover:text-gray-900'
+                  ? 'border-[var(--primary)] text-[var(--primary)]'
+                  : 'border-transparent text-gray-600 hover:text-gray-900'
                   }`}
               >
                 Accompagnements ({accompagnements.length})
@@ -614,6 +672,7 @@ export default function MealsPage() {
                         <tr>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Nom</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Prix</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Accompagnements</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Statut</th>
                           <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Actions</th>
                         </tr>
@@ -633,12 +692,25 @@ export default function MealsPage() {
                                 ))}
                               </div>
                             </td>
+                            <td className="px-4 py-3 text-sm text-gray-600">
+                              {item.accompagnements.length > 0 ? (
+                                <div className="flex flex-wrap gap-1">
+                                  {item.accompagnements.map((acc) => (
+                                    <span key={acc.id} className="inline-flex px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded">
+                                      {acc.name}
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="text-gray-400 text-xs">Aucun</span>
+                              )}
+                            </td>
                             <td className="px-4 py-3">
                               <button
                                 onClick={() => handleToggleDisponibiliteRepas(item.id, item.disponible)}
                                 className={`inline-flex px-3 py-1 text-xs font-medium rounded-full cursor-pointer ${item.disponible
-                                    ? 'bg-green-100 text-green-800'
-                                    : 'bg-gray-100 text-gray-800'
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-gray-100 text-gray-800'
                                   }`}
                               >
                                 {item.disponible ? 'Disponible' : 'Indisponible'}
@@ -708,8 +780,8 @@ export default function MealsPage() {
                               <button
                                 onClick={() => handleToggleDisponibiliteAccompagnement(accompagnement.id, accompagnement.disponible)}
                                 className={`inline-flex px-3 py-1 text-xs font-medium rounded-full cursor-pointer ${accompagnement.disponible
-                                    ? 'bg-green-100 text-green-800'
-                                    : 'bg-gray-100 text-gray-800'
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-gray-100 text-gray-800'
                                   }`}
                               >
                                 {accompagnement.disponible ? 'Disponible' : 'Indisponible'}
@@ -789,6 +861,44 @@ export default function MealsPage() {
                     placeholder="Ex: 1000, 1500, 2000"
                   />
                   <p className="text-xs text-gray-500 mt-1">Séparez les prix par des virgules</p>
+                </div>
+
+                {/* Sélection des accompagnements */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Accompagnements disponibles
+                  </label>
+                  <div className="max-h-48 overflow-y-auto border border-gray-300 rounded-lg p-3 space-y-2">
+                    {accompagnements.length === 0 ? (
+                      <p className="text-sm text-gray-500 text-center py-2">
+                        Aucun accompagnement disponible. Créez-en d'abord dans l'onglet "Accompagnements".
+                      </p>
+                    ) : (
+                      accompagnements.map((acc) => (
+                        <div key={acc.id} className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id={`acc-${acc.id}`}
+                            checked={selectedAccompagnements.includes(acc.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedAccompagnements([...selectedAccompagnements, acc.id]);
+                              } else {
+                                setSelectedAccompagnements(selectedAccompagnements.filter(id => id !== acc.id));
+                              }
+                            }}
+                            className="w-4 h-4 text-[var(--primary)] border-gray-300 rounded focus:ring-[var(--primary)]"
+                          />
+                          <label htmlFor={`acc-${acc.id}`} className="text-sm text-gray-700 flex-1 cursor-pointer">
+                            {acc.name} <span className="text-gray-500">({acc.price.toLocaleString()} FCFA)</span>
+                          </label>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Sélectionnez les accompagnements qui peuvent être ajoutés à ce repas
+                  </p>
                 </div>
 
                 <div className="flex items-center gap-2">
