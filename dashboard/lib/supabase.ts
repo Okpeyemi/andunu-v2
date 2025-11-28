@@ -56,6 +56,10 @@ export interface Commande {
     mode_paiement: 'daily' | 'weekly';
     statut_paiement: 'pending' | 'paid';
     montant_total: number;
+    vendeur_id?: string | null; // DÉPRÉCIÉ - Utiliser vendeurs_par_jour
+    vendeurs_par_jour?: {
+        [jour: string]: string; // jour -> vendeur_id
+    };
     statut: StatutCommande;
     created_at: string;
     updated_at?: string;

@@ -1,19 +1,28 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase, type Commande, type StatutCommande } from '@/lib/supabase';
+import { supabase, type Commande, type StatutCommande, type Vendeur } from '@/lib/supabase';
+import { getVendeursUniques } from '@/lib/vendeur-helpers';
 import DashboardLayout from '@/components/DashboardLayout';
 import Spinner from '@/components/Spinner';
 import NotificationModal from '@/components/NotificationModal';
 
+// Type étendu pour inclure les infos du vendeur
+interface CommandeAvecVendeur extends Commande {
+  vendeur?: Vendeur | null; // Pour compatibilité
+  vendeurs?: Vendeur[];     // Liste des vendeurs impliqués
+}
+
 export default function OrdersPage() {
-  const [commandes, setCommandes] = useState<Commande[]>([]);
-  const [filteredCommandes, setFilteredCommandes] = useState<Commande[]>([]);
+  const [commandes, setCommandes] = useState<CommandeAvecVendeur[]>([]);
+  const [filteredCommandes, setFilteredCommandes] = useState<CommandeAvecVendeur[]>([]);
+  const [vendeurs, setVendeurs] = useState<Vendeur[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [selectedCommande, setSelectedCommande] = useState<Commande | null>(null);
+  const [vendeurFilter, setVendeurFilter] = useState<string>('all');
+  const [selectedCommande, setSelectedCommande] = useState<CommandeAvecVendeur | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
 
   // Notification
@@ -40,6 +49,18 @@ export default function OrdersPage() {
   const fetchCommandes = async () => {
     try {
       setIsLoading(true);
+
+      // Récupérer les vendeurs
+      const { data: vendeursData, error: vendeursError } = await supabase
+        .from('vendeurs')
+        .select('*')
+        .order('nom_complet', { ascending: true });
+
+      if (!vendeursError) {
+        setVendeurs(vendeursData || []);
+      }
+
+      // Récupérer les commandes avec les infos du vendeur
       const { data, error: fetchError } = await supabase
         .from('commandes')
         .select('*')
@@ -51,7 +72,21 @@ export default function OrdersPage() {
         return;
       }
 
-      setCommandes(data || []);
+      // Enrichir les commandes avec les données du vendeur
+      const commandesAvecVendeurs = (data || []).map(cmd => {
+        // Ancienne méthode (compatibilité)
+        const vendeur = vendeursData?.find(v => v.id === cmd.vendeur_id);
+
+        // Nouvelle méthode (vendeurs par jour)
+        const uniqueVendeurIds = getVendeursUniques(cmd.vendeurs_par_jour);
+        const vendeursCmd = uniqueVendeurIds
+          .map(id => vendeursData?.find(v => v.id === id))
+          .filter(Boolean) as Vendeur[];
+
+        return { ...cmd, vendeur, vendeurs: vendeursCmd };
+      });
+
+      setCommandes(commandesAvecVendeurs);
     } catch (err) {
       console.error('Erreur:', err);
       setError('Une erreur est survenue');
@@ -68,13 +103,28 @@ export default function OrdersPage() {
       filtered = filtered.filter(cmd =>
         cmd.client_nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
         cmd.client_telephone.includes(searchTerm) ||
-        cmd.id.toLowerCase().includes(searchTerm.toLowerCase())
+        cmd.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        cmd.vendeur?.nom_complet.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
     // Filtre par statut
     if (statusFilter !== 'all') {
       filtered = filtered.filter(cmd => cmd.statut === statusFilter);
+    }
+
+    // Filtre par vendeur
+    if (vendeurFilter !== 'all') {
+      if (vendeurFilter === 'none') {
+        filtered = filtered.filter(cmd =>
+          !cmd.vendeur_id && (!cmd.vendeurs || cmd.vendeurs.length === 0)
+        );
+      } else {
+        filtered = filtered.filter(cmd =>
+          cmd.vendeur_id === vendeurFilter ||
+          cmd.vendeurs?.some(v => v.id === vendeurFilter)
+        );
+      }
     }
 
     setFilteredCommandes(filtered);
@@ -85,7 +135,7 @@ export default function OrdersPage() {
     try {
       // Récupérer la commande avant modification
       const commandeToUpdate = commandes.find(c => c.id === commandeId);
-      
+
       if (!commandeToUpdate) {
         setNotification({
           isOpen: true,
@@ -280,6 +330,21 @@ export default function OrdersPage() {
               <option value="annulee">Annulée</option>
             </select>
 
+            {/* Filtre par vendeur */}
+            <select
+              value={vendeurFilter}
+              onChange={(e) => setVendeurFilter(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+            >
+              <option value="all">Tous les vendeurs</option>
+              <option value="none">Non assigné</option>
+              {vendeurs.filter(v => v.actif).map(vendeur => (
+                <option key={vendeur.id} value={vendeur.id}>
+                  {vendeur.nom_complet}
+                </option>
+              ))}
+            </select>
+
             {/* Bouton rafraîchir */}
             <button
               onClick={fetchCommandes}
@@ -318,6 +383,7 @@ export default function OrdersPage() {
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">ID</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Client</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Téléphone</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Vendeur</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Jours</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Montant</th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase">Statut</th>
@@ -336,6 +402,28 @@ export default function OrdersPage() {
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600">
                         {commande.client_telephone}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {commande.vendeurs && commande.vendeurs.length > 1 ? (
+                          <div className="group relative inline-block">
+                            <span className="inline-flex px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800 rounded cursor-help">
+                              {commande.vendeurs.length} vendeurs
+                            </span>
+                            <div className="invisible group-hover:visible absolute left-0 top-full mt-1 p-2 bg-gray-800 text-white text-xs rounded shadow-lg z-10 w-max">
+                              {commande.vendeurs.map(v => v.nom_complet).join(', ')}
+                            </div>
+                          </div>
+                        ) : commande.vendeurs && commande.vendeurs.length === 1 ? (
+                          <span className="inline-flex px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800 rounded">
+                            {commande.vendeurs[0].nom_complet}
+                          </span>
+                        ) : commande.vendeur ? (
+                          <span className="inline-flex px-2 py-1 text-xs font-medium bg-purple-100 text-purple-800 rounded">
+                            {commande.vendeur.nom_complet}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400 text-xs">Non assigné</span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-600">
                         {commande.jours_selectionnes.length} jour(s)
@@ -414,6 +502,68 @@ export default function OrdersPage() {
                   </div>
                 </div>
 
+                {/* Informations vendeur */}
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold mb-3">Vendeur(s)</h3>
+                  <div className="space-y-2">
+                    {selectedCommande.vendeurs_par_jour && Object.keys(selectedCommande.vendeurs_par_jour).length > 0 ? (
+                      <div className="bg-gray-50 rounded-lg overflow-hidden">
+                        <table className="w-full text-sm">
+                          <thead className="bg-gray-100">
+                            <tr>
+                              <th className="px-3 py-2 text-left text-gray-600 font-medium">Jour</th>
+                              <th className="px-3 py-2 text-left text-gray-600 font-medium">Repas</th>
+                              <th className="px-3 py-2 text-left text-gray-600 font-medium">Vendeur</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-200">
+                            {Object.entries(selectedCommande.vendeurs_par_jour).map(([jour, vendeurId]) => {
+                              const vendeur = selectedCommande.vendeurs?.find(v => v.id === vendeurId);
+                              const repas = selectedCommande.repas[jour]?.mainDish || '-';
+                              return (
+                                <tr key={jour}>
+                                  <td className="px-3 py-2 font-medium">{jour}</td>
+                                  <td className="px-3 py-2 text-gray-600">{repas}</td>
+                                  <td className="px-3 py-2">
+                                    {vendeur ? (
+                                      <span className="text-purple-700 font-medium">{vendeur.nom_complet}</span>
+                                    ) : (
+                                      <span className="text-gray-400">Inconnu ({vendeurId.slice(0, 6)}...)</span>
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : selectedCommande.vendeur ? (
+                      <>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Nom :</span>
+                          <span className="font-medium">{selectedCommande.vendeur.nom_complet}</span>
+                        </div>
+                        {selectedCommande.vendeur.telephone && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Téléphone :</span>
+                            <span className="font-medium">{selectedCommande.vendeur.telephone}</span>
+                          </div>
+                        )}
+                        {selectedCommande.vendeur.email && (
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Email :</span>
+                            <span className="font-medium">{selectedCommande.vendeur.email}</span>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="text-center py-3 text-gray-500 bg-gray-50 rounded-lg">
+                        Aucun vendeur assigné
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 {/* Livraison */}
                 <div className="mb-6">
                   <h3 className="text-lg font-semibold mb-3">Livraison</h3>
@@ -483,11 +633,10 @@ export default function OrdersPage() {
                         key={statut}
                         onClick={() => handleUpdateStatus(selectedCommande.id, statut)}
                         disabled={isUpdating || selectedCommande.statut === statut}
-                        className={`px-4 py-2 rounded-lg text-sm cursor-pointer font-medium transition-all ${
-                          selectedCommande.statut === statut
-                            ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
-                            : 'bg-white border-2 border-gray-200 hover:border-[var(--primary)] hover:text-[var(--primary)]'
-                        } disabled:opacity-50`}
+                        className={`px-4 py-2 rounded-lg text-sm cursor-pointer font-medium transition-all ${selectedCommande.statut === statut
+                          ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                          : 'bg-white border-2 border-gray-200 hover:border-[var(--primary)] hover:text-[var(--primary)]'
+                          } disabled:opacity-50`}
                       >
                         {getStatutLabel(statut)}
                       </button>

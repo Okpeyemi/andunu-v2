@@ -82,6 +82,14 @@ export default function Step1DaySelection({ onSubmit }: Step1DaySelectionProps) 
         Quelles sont les jours que tu voudrais planifier ?
       </h2>
 
+      {shouldUseNextWeek && (
+        <div className="mb-8 p-4 bg-blue-50 border border-blue-100 rounded-2xl max-w-2xl w-full text-center">
+          <p className="text-blue-800 font-medium">
+            📅 Nous sommes déjà en fin de semaine, alors nous planifions vos repas pour la semaine prochaine ! Prenez de l'avance pour une semaine sans stress. 🚀
+          </p>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 w-full max-w-2xl mb-8">
         {DAYS.map((day, index) => {
           const date = getDateForDayIndex(index);
@@ -96,13 +104,12 @@ export default function Step1DaySelection({ onSubmit }: Step1DaySelectionProps) 
                 toggleDay(day);
               }}
               disabled={disabled}
-              className={`px-6 py-4 rounded-2xl text-lg font-medium transition-all flex flex-col items-center ${
-                disabled
+              className={`px-6 py-4 rounded-2xl text-lg font-medium transition-all flex flex-col items-center ${disabled
                   ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
                   : isSelected
-                  ? 'bg-[var(--primary)] text-white shadow-lg scale-105'
-                  : 'bg-gray-100 text-foreground hover:bg-gray-200'
-              }`}
+                    ? 'bg-[var(--primary)] text-white shadow-lg scale-105'
+                    : 'bg-gray-100 text-foreground hover:bg-gray-200'
+                }`}
             >
               <span>{day}</span>
               <span className="text-sm mt-1 opacity-80">{formatDate(date)}</span>
@@ -114,11 +121,10 @@ export default function Step1DaySelection({ onSubmit }: Step1DaySelectionProps) 
       <button
         onClick={handleSubmit}
         disabled={selectedDays.length === 0 || isSubmitting}
-        className={`px-8 py-3 rounded-2xl text-lg font-medium transition-all flex items-center gap-2 ${
-          selectedDays.length > 0 && !isSubmitting
+        className={`px-8 py-3 rounded-2xl text-lg font-medium transition-all flex items-center gap-2 ${selectedDays.length > 0 && !isSubmitting
             ? 'bg-[var(--primary)] text-white hover:opacity-90'
             : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-        }`}
+          }`}
       >
         {isSubmitting && <Spinner size="sm" />}
         Suivant
