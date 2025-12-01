@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.76.1",
+    "@vercel/analytics": "^1.6.0",
     "fedapay": "^1.2.5",
     "framer-motion": "^12.23.24",
     "next": "16.0.0",

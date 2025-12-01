@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Poppins, DM_Sans } from "next/font/google";
 import "./globals.css";
 import NavigationLoader from "@/components/NavigationLoader";
+import { Analytics } from "@vercel/analytics/react";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -100,6 +101,7 @@ export default function RootLayout({
       >
         <NavigationLoader />
         {children}
+        <Analytics />
       </body>
     </html>
   );
